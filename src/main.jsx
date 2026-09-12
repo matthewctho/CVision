@@ -1,12 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   ArrowDownUp, ArrowRight, CalendarDays, Car, Check, ChevronDown, ChevronLeft,
   ChevronRight, CircleHelp, Clock3, Copy, GripVertical, Home, Info, Layers3,
   MapPin, Menu, Navigation, ParkingCircle, Route, Search, Settings2, Sparkles,
   Star, Timer, X, Zap
 } from 'lucide-react';
-import './styles.css';
 
 const EVENTS = [
   { id: 1, title: 'Design sync at Figma', place: 'Figma HQ · 760 Market St', date: 'Today', time: '10:30 AM – 12:00 PM', color: 'purple', duration: '1 hr 30 min' },
@@ -206,5 +204,3 @@ export default function App() {
   const [signedIn, setSignedIn] = useState(false);
   return signedIn ? <Dashboard onSignOut={() => setSignedIn(false)} /> : <SignIn onSignIn={() => setSignedIn(true)} />;
 }
-
-createRoot(document.getElementById('root')).render(<App />);
