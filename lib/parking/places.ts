@@ -4,6 +4,7 @@ import type { ParkingCandidate } from "@/lib/types";
 
 const SEARCH_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby";
 const DEFAULT_RADIUS_METERS = 800;
+const FETCH_TIMEOUT_MS = 5000;
 
 const FIELD_MASK = [
   "places.id",
@@ -52,6 +53,7 @@ export async function findNearbyParking(
         },
       },
     }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -68,6 +70,7 @@ export async function findNearbyParking(
       const placeLng = place.location!.longitude!;
       return {
         id: place.id,
+        source: "google_places" as const,
         name: place.displayName?.text ?? "Unnamed parking",
         lat: placeLat,
         lng: placeLng,
@@ -76,7 +79,7 @@ export async function findNearbyParking(
         isOpenNow: place.currentOpeningHours?.openNow ?? null,
         rating: place.rating ?? null,
         estimatedPricePerHour: estimatePricePerHour(place.id),
-        priceIsEstimated: true as const,
+        priceIsEstimated: true,
       };
     })
     .sort((a, b) => a.distanceMeters - b.distanceMeters);

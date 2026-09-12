@@ -18,7 +18,7 @@ export default function MapPage() {
     import("leaflet").then((L) => {
       if (cancelled) return;
 
-      const m = L.map(ref.current!).setView([37.7749, -122.4194], 13);
+      const m = L.map(ref.current!).setView([-33.8688, 151.2093], 13);
       map = m;
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
