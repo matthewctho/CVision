@@ -17,9 +17,9 @@ export default function Events() {
   const [selectedEvent, setSelectedEvent] = useState<LocatedEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
+<<<<<<< HEAD
     const controller = new AbortController();
     fetchCalendarEvents(controller.signal).then((result) => {
       if (controller.signal.aborted) return;
@@ -30,6 +30,15 @@ export default function Events() {
       setSkipped(result.events.length - located.length);
       setError(result.error);
       setSignedIn(result.signedIn);
+=======
+    const loadEvents = async () => {
+      const response = await fetch("/api/calendar/events");
+      const data = (await response.json()) as CalendarResponse;
+      if (!response.ok) setError(data.error ?? "Unable to load your calendar.");
+      else {
+        setEvents(data.items ?? []);
+      }
+>>>>>>> refs/remotes/origin/main
       setLoading(false);
     });
     return () => controller.abort();
@@ -39,19 +48,10 @@ export default function Events() {
     <main className="events-page min-h-dvh px-5 py-6 text-[#3b1f25] sm:px-8">
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-3xl flex-col">
         <header className="flex items-center justify-between gap-4">
-          <Link href="/" className="text-3xl font-semibold tracking-tight">Parkwise</Link>
-          {signedIn ? (
-            <form action="/api/auth/logout" method="post">
-              <button type="submit" className="rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
-                Log out
-              </button>
-            </form>
-          ) : (
-            <a href="/api/auth/google" className="inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
-              <GoogleMark />
-              Sign in with Google
-            </a>
-          )}
+          <a href="/" className="text-3xl font-semibold tracking-tight">Parkwise</a>
+          <a href="/" className="inline-flex items-center rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
+            Back to homepage
+          </a>
         </header>
 
         <section className="mt-10 flex-1">
@@ -128,16 +128,5 @@ export default function Events() {
         </div>
       )}
     </main>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.24c1.9-1.75 2.97-4.34 2.97-7.36Z" />
-      <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.59A10 10 0 0 0 12 22Z" />
-      <path fill="#FBBC05" d="M6.41 13.92A6 6 0 0 1 6.1 12c0-.67.12-1.31.31-1.92V7.49H3.06A10 10 0 0 0 2 12c0 1.61.39 3.14 1.06 4.51l3.35-2.59Z" />
-      <path fill="#EA4335" d="M12 5.96c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.96 2.97 14.7 2 12 2a10 10 0 0 0-8.94 5.49l3.35 2.59C7.2 7.72 9.4 5.96 12 5.96Z" />
-    </svg>
   );
 }
