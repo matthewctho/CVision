@@ -200,11 +200,95 @@ body {
   background: linear-gradient(135deg, #fbf5ef 0%, #efe0d3 52%, #f2e5da 100%);
 }
 
-.events-page section > div,
-.events-page ul,
-.events-page section > p {
+.events-page > div > section > div,
+.events-page > div > section > ul,
+.events-page > div > section > p {
   background: rgb(255 250 245 / 62%);
   border: 1px solid rgb(255 255 255 / 78%);
   box-shadow: 0 18px 45px rgb(89 35 47 / 12%), inset 0 1px 0 rgb(255 255 255 / 55%);
   backdrop-filter: blur(24px) saturate(125%);
+}
+
+/* Live Leaflet map embedded in the dashboard card */
+.map-live {
+  position: relative;
+  height: 413px;
+  background: #e9ded0;
+}
+.map-live-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.map-live .leaflet-container {
+  font-family: inherit;
+}
+.map-status {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 1000;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgb(255 250 245 / 92%);
+  color: var(--parkwise-maroon);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgb(89 35 47 / 18%);
+  text-align: center;
+}
+.map-status-warn {
+  background: rgb(255 244 240 / 95%);
+  color: #b3261e;
+}
+.map-tool {
+  text-decoration: none;
+}
+.empty-note {
+  background: rgb(255 250 245 / 62%);
+  border: 1px solid rgb(255 255 255 / 78%);
+  border-radius: 11px;
+  padding: 14px;
+  color: #8b7370;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.empty-note a {
+  color: var(--parkwise-maroon);
+  font-weight: 600;
+}
+.spot-row.drop-target {
+  border-style: dashed;
+}
+.location-button {
+  max-width: 280px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.location-button svg {
+  flex: 0 0 auto;
+}
+.nav-link,
+.view-all,
+.primary-button,
+.save-button {
+  text-decoration: none;
+}
+a.save-button,
+a.primary-button {
+  height: 43px;
+}
+a.primary-button {
+  height: 40px;
+}
+.topbar .profile-button {
+  margin-left: 0;
+}
+@media (max-width: 620px) {
+  .map-live {
+    height: 300px;
+  }
 }
