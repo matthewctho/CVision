@@ -443,7 +443,6 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             </Link>
           </div>
         </section>
-
         <section className="dashboard-grid">
           <div className="left-column">
             <div className="section-header">
