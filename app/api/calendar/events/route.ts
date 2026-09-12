@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Google session expired; sign in again" }, { status: 401 });
 
   const calendarUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
-  calendarUrl.search = new URLSearchParams({ timeMin: new Date().toISOString(), maxResults: "20", singleEvents: "true", orderBy: "startTime" }).toString();
+  calendarUrl.search = new URLSearchParams({ timeMin: new Date().toISOString(), maxResults: "5", singleEvents: "true", orderBy: "startTime" }).toString();
   const calendarResponse = await fetch(calendarUrl, { headers: { Authorization: `Bearer ${session.accessToken}` } });
   if (!calendarResponse.ok) {
     console.error("Google Calendar request failed:", await calendarResponse.text());
