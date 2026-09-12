@@ -1,6 +1,10 @@
 import Image from "next/image";
+import { cookies } from "next/headers";
+import { googleAuthCookies, readSession } from "@/lib/google/auth";
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const user = await readSession(cookieStore.get(googleAuthCookies.session)?.value);
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
@@ -39,6 +43,22 @@ export default function Home() {
           </p>
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          {user ? (
+            <form action="/api/auth/logout" method="post" className="flex items-center gap-3">
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">Signed in as {user.email}</span>
+              <button type="submit" className="rounded-full border border-solid border-black/[.12] px-4 py-2 text-sm dark:border-white/[.2]">Sign out</button>
+            </form>
+          ) : (
+            <a href="/api/auth/google" className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-solid border-black/[.12] bg-white px-5 text-black transition-colors hover:bg-black/[.04] dark:border-white/[.2] dark:bg-black dark:text-white dark:hover:bg-white/[.08] md:w-[220px]">
+              <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.24c1.9-1.75 2.97-4.34 2.97-7.36Z" />
+                <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.59A10 10 0 0 0 12 22Z" />
+                <path fill="#FBBC05" d="M6.41 13.92A6 6 0 0 1 6.1 12c0-.67.12-1.31.31-1.92V7.49H3.06A10 10 0 0 0 2 12c0 1.61.39 3.14 1.06 4.51l3.35-2.59Z" />
+                <path fill="#EA4335" d="M12 5.96c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.96 2.97 14.7 2 12 2a10 10 0 0 0-8.94 5.49l3.35 2.59C7.2 7.72 9.4 5.96 12 5.96Z" />
+              </svg>
+              Sign in with Google
+            </a>
+          )}
           <a
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
