@@ -74,7 +74,7 @@ function Logo() {
       <span className="brand-mark">
         <ParkingCircle size={18} />
       </span>
-      <span>parkwise</span>
+      <span>CVision</span>
     </div>
   );
 }
@@ -90,14 +90,14 @@ function SignIn() {
       <section className="auth-content">
         <div className="auth-copy">
           <h1>
-            Welcome to <em>Parkwise</em>
+            Welcome to <em>CVision</em>
           </h1>
         </div>
         <div className="signin-card glass-card">
           <div className="signin-icon">
             <CalendarDays size={22} />
           </div>
-          <h2>Welcome to Parkwise</h2>
+          <h2>Welcome to CVision</h2>
           <p>Sign in with Google to plan parking around your calendar.</p>
           <a className="google-button" href="/api/auth/google">
             <span className="google-g">G</span> Sign in with Google
@@ -105,7 +105,7 @@ function SignIn() {
         </div>
       </section>
       <footer className="auth-footer">
-        <span>© 2026 Parkwise</span>
+        <span>© 2026 CVision</span>
       </footer>
     </main>
   );
@@ -396,7 +396,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
               <span className="live-dot" /> synced with Google Calendar
             </div>
             <h1>
-              Your day, <em>parked.</em>
+              Hi, <em>{userName ?? "there"}</em>
             </h1>
             <p>
               {selectedEvent
@@ -608,7 +608,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
 
       <footer className="dash-footer">
         <span>
-          <ParkingCircle size={14} /> Parkwise
+          <ParkingCircle size={14} /> CVision
         </span>
         <button type="button" onClick={onSignOut}>
           Sign out
