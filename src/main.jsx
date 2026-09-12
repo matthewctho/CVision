@@ -43,24 +43,17 @@ function SignIn({ onSignIn }) {
   return (
     <main className="auth-shell">
       <div className="auth-orb orb-one" /><div className="auth-orb orb-two" />
-      <header className="auth-nav"><Logo /><span className="beta-pill">BETA</span><button className="text-button">How it works <ArrowRight size={15} /></button></header>
+      <header className="auth-nav"><Logo /></header>
       <section className="auth-content">
-        <div className="auth-copy">
-          <div className="eyebrow"><Sparkles size={14} /> parking, planned around your day</div>
-          <h1>Arrive calm.<br /><em>Park smarter.</em></h1>
-          <p>Parkwise reads your calendar and finds the best parking near every destination, so your day stays on schedule.</p>
-          <div className="trust-row"><span className="avatar-stack"><i>J</i><i>M</i><i>A</i></span><span>Join 2,400+ drivers parking with less stress</span></div>
-        </div>
+        <div className="auth-copy"><h1>Welcome to <em>Parkwise</em></h1></div>
         <div className="signin-card glass-card">
           <div className="signin-icon"><CalendarDays size={22} /></div>
           <h2>Welcome to Parkwise</h2>
-          <p>Connect your calendar to get a personalized parking plan for your day.</p>
-          <button className="google-button" onClick={onSignIn}><span className="google-g">G</span> Continue with Google <ArrowRight size={17} /></button>
-          <div className="secure-note"><Check size={14} /> We never edit your calendar <span>·</span> <button>Privacy</button></div>
-          <div className="demo-note"><Zap size={14} /> Demo mode includes sample calendar events</div>
+          <p>Sign in with Google</p>
+          <button className="google-button" onClick={onSignIn}><span className="google-g">G</span> Sign in with Google</button>
         </div>
       </section>
-      <footer className="auth-footer"><span>© 2025 Parkwise</span><span className="footer-links">Made for less circling <span>·</span> San Francisco, CA</span></footer>
+      <footer className="auth-footer"><span>© 2025 Parkwise</span></footer>
     </main>
   );
 }
@@ -81,13 +74,14 @@ function RouteMap({ spots, selectedSpot, onSelect, destination, animationKey }) 
   const routePath = spots.length === 3
     ? 'M90 320 C 180 280, 155 200, 275 205 S 395 155, 485 75'
     : 'M90 320 C 180 280, 150 185, 260 210 S 380 170, 485 75';
+  const pathId = `active-route-${animationKey}`;
   return <div className="map-card">
     <div className="map-toolbar"><div className="map-heading"><span className="map-heading-icon"><MapPin size={16} /></span><div><strong>Route preview</strong><span>{destination}</span></div></div><button className="map-tool"><Layers3 size={15} /> Layers</button></div>
     <div className="map-canvas">
       <div className="water water-one" /><div className="water water-two" />
       <div className="road road-one" /><div className="road road-two" /><div className="road road-three" /><div className="road road-four" />
       <div className="map-label label-market">MARKET ST</div><div className="map-label label-geary">GEARY ST</div><div className="map-label label-5th">5TH ST</div>
-      <svg key={animationKey} className="route-line" viewBox="0 0 600 400" preserveAspectRatio="none"><path id="active-route" d={routePath} /><circle className="route-car" r="7"><animateMotion dur="2.8s" begin="0s" fill="freeze" repeatCount="1"><mpath href="#active-route" /></animateMotion></circle></svg>
+      <svg key={animationKey} className="route-line" viewBox="0 0 600 400" preserveAspectRatio="none"><path id={pathId} d={routePath} /><circle className="route-car" r="7"><animateMotion dur="2.8s" begin="0s" fill="freeze" repeatCount="1"><mpath href={`#${pathId}`} /></animateMotion></circle></svg>
       {spots.map((spot, index) => <button key={spot.id} className={`map-pin pin-${index + 1} ${selectedSpot === spot.id ? 'pin-selected' : ''}`} onClick={() => onSelect(spot.id)}><span>{index + 1}</span></button>)}
       <div className="destination-pin"><MapPin size={25} fill="currentColor" /><span>{destination.split(' · ')[0]}</span></div>
       <div className="map-zoom"><button><PlusIcon /></button><button><MinusIcon /></button></div>
@@ -99,11 +93,11 @@ function RouteMap({ spots, selectedSpot, onSelect, destination, animationKey }) 
 function PlusIcon() { return <span className="simple-icon">+</span>; }
 function MinusIcon() { return <span className="simple-icon">−</span>; }
 
-function SpotRow({ spot, index, selected, onSelect, onDragStart, onDrop, onDragEnd }) {
-  return <div className={`spot-row ${selected ? 'selected' : ''}`} draggable
-    onDragStart={event => onDragStart(event, spot.id)}
-    onDragOver={event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }}
-    onDrop={event => { event.preventDefault(); onDrop(spot.id); }}
+function SpotRow({ spot, index, selected, onSelect, onDragStart, onDragOver, onDrop, onDragEnd, dropTarget }) {
+  return <div className={`spot-row ${selected ? 'selected' : ''} ${dropTarget ? 'drop-target' : ''}`} draggable
+    onDragStart={event => onDragStart(event, index)}
+    onDragOver={event => onDragOver(event, index)}
+    onDrop={event => { event.preventDefault(); onDrop(event, index); }}
     onDragEnd={onDragEnd}
     onClick={() => onSelect(spot.id)}>
     <GripVertical size={16} className="drag-handle" /><span className={`spot-number ${spot.tone}`}>{index + 1}</span>
@@ -116,7 +110,8 @@ function Dashboard({ onSignOut }) {
   const [selectedEvent, setSelectedEvent] = useState(EVENTS[0]);
   const [filters, setFilters] = useState(['ai']);
   const [spots, setSpots] = useState(MOCK_SPOTS);
-  const [dragId, setDragId] = useState(null);
+  const [dragSourceIndex, setDragSourceIndex] = useState(null);
+  const [dragTargetIndex, setDragTargetIndex] = useState(null);
   const [selectedSpot, setSelectedSpot] = useState('a');
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -157,23 +152,32 @@ function Dashboard({ onSignOut }) {
     setAnimationKey(key => key + 1);
   };
 
-  const startDragging = (event, id) => {
+  const startDragging = (event, index) => {
     event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', id);
-    setDragId(id);
+    event.dataTransfer.setData('text/plain', String(index));
+    setDragSourceIndex(index);
   };
-  const reorder = (targetId) => {
-    const sourceId = dragId;
-    if (!sourceId || sourceId === targetId) return;
+  const dragOver = (event, index) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    setDragTargetIndex(index);
+  };
+  const reorder = (event, targetIndex) => {
+    const parsedSource = event.dataTransfer.getData('text/plain');
+    const sourceIndex = parsedSource === '' ? dragSourceIndex : Number(parsedSource);
+    if (sourceIndex === null || sourceIndex === targetIndex || Number.isNaN(sourceIndex)) {
+      setDragSourceIndex(null);
+      setDragTargetIndex(null);
+      return;
+    }
     const next = [...sortedSpots];
-    const sourceIndex = next.findIndex(spot => spot.id === sourceId);
-    const targetIndex = next.findIndex(spot => spot.id === targetId);
-    if (sourceIndex < 0 || targetIndex < 0) return;
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex >= next.length || targetIndex >= next.length) return;
     const [moved] = next.splice(sourceIndex, 1);
     next.splice(targetIndex, 0, moved);
     setSpots(next);
     setFilters([]);
-    setDragId(null);
+    setDragSourceIndex(null);
+    setDragTargetIndex(null);
     setAnimationKey(key => key + 1);
   };
   const copyLink = () => { navigator.clipboard?.writeText('https://parkwise.app/path/figma-hq-demo'); setCopied(true); setTimeout(() => setCopied(false), 1800); };
@@ -188,7 +192,7 @@ function Dashboard({ onSignOut }) {
           <div className="section-header path-header"><div><span className="section-label">SMART ROUTE</span><h2>Parking stops</h2><p className="sub-copy">Drag to reorder your route</p></div><button className="ai-badge"><Sparkles size={14} /> AI optimized</button></div>
           <div className="sort-bar"><span>Rank by</span><SortButton active={filters.includes('ai')} onClick={() => toggleFilter('ai')} icon={<Sparkles size={13} />}>AI suggested</SortButton><SortButton active={filters.includes('free')} onClick={() => toggleFilter('free')} icon={<Check size={13} />}>Free first</SortButton><SortButton active={filters.includes('nearest')} onClick={() => toggleFilter('nearest')} icon={<Navigation size={13} />}>Nearest</SortButton><SortButton active={filters.includes('cheapest')} onClick={() => toggleFilter('cheapest')} icon={<Star size={13} />}>Cheapest</SortButton></div>
           <div className="route-summary"><span className="summary-icon"><Timer size={17} /></span><div><span>Total route time</span><strong>{routeMinutes} min</strong></div><i /><div><span>Arrival by</span><strong>{arrivalTime}</strong></div><Info size={14} className="summary-info" /></div>
-          <div className="spots-list">{sortedSpots.map((spot, index) => <SpotRow key={spot.id} spot={spot} index={index} selected={selectedSpot === spot.id} onSelect={setSelectedSpot} onDragStart={startDragging} onDrop={reorder} onDragEnd={() => setDragId(null)} />)}</div>
+          <div className="spots-list">{sortedSpots.map((spot, index) => <SpotRow key={spot.id} spot={spot} index={index} selected={selectedSpot === spot.id} dropTarget={dragTargetIndex === index} onSelect={setSelectedSpot} onDragStart={startDragging} onDragOver={dragOver} onDrop={reorder} onDragEnd={() => { setDragSourceIndex(null); setDragTargetIndex(null); }} />)}</div>
           <button className={`save-button ${saved ? 'saved' : ''}`} onClick={() => setSaved(true)}>{saved ? <><Check size={17} /> Path saved to calendar</> : <><Star size={17} /> Save this path</>}</button>
           {saved && <div className="share-row"><span><Check size={14} /> Added to “{selectedEvent.title}”</span><button onClick={copyLink}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied!' : 'Copy link'}</button></div>}</div>
         <div className="right-column"><RouteMap spots={sortedSpots} selectedSpot={selectedSpot} onSelect={setSelectedSpot} destination={selectedEvent.place} animationKey={animationKey} /><div className="arrival-card"><div className="arrival-title"><span className="destination-icon"><MapPin size={16} /></span><div><span>YOUR DESTINATION</span><strong>{selectedEvent.place}</strong></div><button><MoreIcon /></button></div><div className="arrival-stats"><div><span>Drive to first stop</span><strong>12 min</strong></div><div><span>Walk to destination</span><strong>{spots[spots.length - 1]?.walk.split(' ')[0]} min</strong></div><div><span>Arrive by</span><strong>{arrivalTime}</strong></div></div><div className="arrival-note"><Sparkles size={14} /><span>Leave by <strong>9:46 AM</strong> for a relaxed arrival</span></div></div></div>
