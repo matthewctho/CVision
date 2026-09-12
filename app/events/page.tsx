@@ -39,10 +39,10 @@ export default function Events() {
     <main className="events-page min-h-dvh px-5 py-6 text-[#3b1f25] sm:px-8">
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-3xl flex-col">
         <header className="flex items-center justify-between gap-4">
-          <a href="/" className="text-3xl font-semibold tracking-tight">Parkwise</a>
-          <a href="/" className="inline-flex items-center rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
+          <Link href="/" className="text-3xl font-semibold tracking-tight">Parkwise</Link>
+          <Link href="/" className="inline-flex items-center rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
             Back to homepage
-          </a>
+          </Link>
         </header>
 
         <section className="mt-10 flex-1">
