@@ -98,14 +98,32 @@ export type CalendarLoad = { events: CalendarEvent[]; error: string; signedIn: b
 /** Loads the signed-in user's upcoming events; an error means not signed in or Google failed. */
 export async function fetchCalendarEvents(signal?: AbortSignal): Promise<CalendarLoad> {
   try {
-    const response = await fetch("/api/calendar/events", { signal });
+    const response = await fetch("/api/calendar/events", { signal, cache: "no-store" });
     const data = (await response.json()) as CalendarResponse;
     if (!response.ok) {
       return { events: [], error: data.error ?? "Unable to load your calendar.", signedIn: response.status !== 401 };
     }
+
     return { events: data.items ?? [], error: "", signedIn: true };
   } catch (err) {
     if (signal?.aborted) return { events: [], error: "", signedIn: false };
     return { events: [], error: err instanceof Error ? err.message : "Unable to load your calendar.", signedIn: false };
+  }
+}
+
+export async function saveCalendarRoute(eventId: string, routeLink: string): Promise<{ error: string }> {
+  try {
+    const response = await fetch(`/api/calendar/events/${encodeURIComponent(eventId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ routeLink }),
+    });
+    if (!response.ok) {
+      const data = (await response.json()) as { error?: string };
+      return { error: data.error ?? "Unable to save the route to Google Calendar." };
+    }
+    return { error: "" };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unable to save the route to Google Calendar." };
   }
 }

@@ -30,5 +30,6 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(home);
   response.cookies.set(googleAuthCookies.session, await createSession({ email: profile.email, name: profile.name, picture: profile.picture, accessToken: token.access_token, refreshToken: token.refresh_token, expiresAt: Date.now() + token.expires_in * 1000 }), sessionCookie);
   response.cookies.delete(googleAuthCookies.state);
+  response.cookies.set(googleAuthCookies.demo, "", { path: "/", maxAge: 0 });
   return response;
 }

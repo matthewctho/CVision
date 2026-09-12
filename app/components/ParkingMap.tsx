@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Circle, Map as LeafletMap, Marker } from "leaflet";
+import type { Circle, Map as LeafletMap, Marker, Polyline } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { escapeHtml } from "./parkingFormat";
 
@@ -27,6 +27,11 @@ type Props = {
 const DESTINATION_ICON_HTML =
   '<div style="width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;' +
   'background:#d93025;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)"></div>';
+
+const ROUTE_CAR_HTML =
+  '<div style="width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;' +
+  'background:#7a3040;border:3px solid #fff;box-shadow:0 2px 8px rgba(59,31,37,.35);' +
+  'color:#fff;font:700 13px/18px system-ui,sans-serif;text-align:center">●</div>';
 
 function spotIconHtml(label: number, selected: boolean): string {
   const size = selected ? 28 : 22;
@@ -55,6 +60,9 @@ export default function ParkingMap({
   const [leaflet, setLeaflet] = useState<{ L: Leaflet; map: LeafletMap } | null>(null);
   const markersRef = useRef(new Map<string, Marker>());
   const destinationMarkerRef = useRef<Marker | null>(null);
+  const routeLineRef = useRef<Polyline | null>(null);
+  const routeCarRef = useRef<Marker | null>(null);
+  const routeAnimationRef = useRef<number | null>(null);
   const fittedKeyRef = useRef("");
   const initialDestinationRef = useRef(destination);
 
@@ -170,6 +178,9 @@ export default function ParkingMap({
       setLeaflet(null);
       markers.clear();
       destinationMarkerRef.current = null;
+      routeLineRef.current = null;
+      routeCarRef.current = null;
+      if (routeAnimationRef.current !== null) cancelAnimationFrame(routeAnimationRef.current);
       instance?.stopLocate();
       instance?.remove();
     };
@@ -194,6 +205,82 @@ export default function ParkingMap({
       .bindPopup(`<b>${escapeHtml(destinationName ?? "Destination")}</b><br>Destination`);
     map.setView([destinationLat, destinationLng], 16);
   }, [leaflet, destinationLat, destinationLng, destinationName]);
+
+  // Draw the current try-order and animate a car along every leg whenever the
+  // selected event or parking order changes.
+  useEffect(() => {
+    if (!leaflet) return;
+    const { L, map } = leaflet;
+    routeLineRef.current?.remove();
+    routeCarRef.current?.remove();
+    routeLineRef.current = null;
+    routeCarRef.current = null;
+    if (routeAnimationRef.current !== null) cancelAnimationFrame(routeAnimationRef.current);
+    routeAnimationRef.current = null;
+
+    const points: [number, number][] = spots.map((spot) => [spot.lat, spot.lng]);
+    if (destinationLat !== undefined && destinationLng !== undefined) {
+      points.push([destinationLat, destinationLng]);
+    }
+    if (points.length < 2) return;
+
+    routeLineRef.current = L.polyline(points, {
+      color: "#7a3040",
+      weight: 4,
+      opacity: 0.8,
+      dashArray: "8 7",
+      lineCap: "round",
+      lineJoin: "round",
+    }).addTo(map);
+
+    const routeCar = L.marker(points[0], {
+      icon: L.divIcon({ className: "", html: ROUTE_CAR_HTML, iconSize: [0, 0] }),
+      interactive: false,
+      zIndexOffset: 1500,
+    }).addTo(map);
+    routeCarRef.current = routeCar;
+
+    const segmentLengths = points.slice(1).map((point, index) => {
+      const previous = points[index];
+      return Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+    });
+    const totalLength = segmentLengths.reduce((sum, length) => sum + length, 0);
+    const startedAt = performance.now();
+    const duration = Math.min(5200, Math.max(2200, totalLength * 90000));
+
+    const animate = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const distance = progress * totalLength;
+      let travelled = 0;
+      let segmentIndex = 0;
+      while (segmentIndex < segmentLengths.length - 1 && travelled + segmentLengths[segmentIndex] < distance) {
+        travelled += segmentLengths[segmentIndex];
+        segmentIndex += 1;
+      }
+      const segmentProgress =
+        segmentLengths[segmentIndex] === 0
+          ? 1
+          : (distance - travelled) / segmentLengths[segmentIndex];
+      const start = points[segmentIndex];
+      const end = points[segmentIndex + 1];
+      routeCar.setLatLng([
+        start[0] + (end[0] - start[0]) * segmentProgress,
+        start[1] + (end[1] - start[1]) * segmentProgress,
+      ]);
+      if (progress < 1) routeAnimationRef.current = requestAnimationFrame(animate);
+      else routeAnimationRef.current = null;
+    };
+
+    routeAnimationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (routeAnimationRef.current !== null) cancelAnimationFrame(routeAnimationRef.current);
+      routeAnimationRef.current = null;
+      routeLineRef.current?.remove();
+      routeCarRef.current?.remove();
+      routeLineRef.current = null;
+      routeCarRef.current = null;
+    };
+  }, [leaflet, spots, destinationLat, destinationLng]);
 
   // Numbered spot markers. Cheap enough to rebuild whenever order or
   // selection changes; the selected one is drawn larger and in brand colour.
@@ -235,10 +322,6 @@ export default function ParkingMap({
       map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 17 });
     }
 
-    // Straight after a fit the view is still settling, so a popup's auto-pan
-    // would fight it and can land half off-screen; the overview is what the
-    // user wants at that moment anyway.
-    if (selectedSpotId && !justFitted) markers.get(selectedSpotId)?.openPopup();
   }, [leaflet, spots, selectedSpotId, destinationLat, destinationLng]);
 
   return <div ref={ref} className={className} />;

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -46,6 +46,7 @@ import {
   formatEventDay,
   formatEventRange,
   parkingHref,
+  saveCalendarRoute,
   type LocatedEvent,
 } from "@/lib/calendar/events";
 import { annotateRoute } from "@/lib/parking/route";
@@ -242,16 +243,37 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
   const [dragTargetIndex, setDragTargetIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [routeSaveError, setRouteSaveError] = useState("");
+  const savedRouteKeyRef = useRef("");
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchCalendarEvents(controller.signal).then((result) => {
-      if (controller.signal.aborted) return;
+    let controller = new AbortController();
+    let firstLoad = true;
+    const refresh = () => {
+      controller.abort();
+      controller = new AbortController();
+      const requestController = controller;
+      fetchCalendarEvents(requestController.signal).then((result) => {
+      if (requestController.signal.aborted) return;
       setEvents(eventsWithLocation(result.events));
       setEventsError(result.error);
-      setEventsLoading(false);
-    });
-    return () => controller.abort();
+      if (firstLoad) {
+        setEventsLoading(false);
+        firstLoad = false;
+      }
+      });
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 30_000);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
   const selectedEvent = events.find((event) => event.id === selectedEventId) ?? events[0] ?? null;
@@ -320,6 +342,17 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
     if (spots.length === 0) return null;
     return buildGoogleMapsLink(spots.slice(0, MAX_STOPS));
   }, [spots]);
+
+  useEffect(() => {
+    if (!selectedEvent || !tourLink || parkingLoading) return;
+    const key = `${selectedEvent.id}:${tourLink}`;
+    if (savedRouteKeyRef.current === key) return;
+    savedRouteKeyRef.current = key;
+    setRouteSaveError("");
+    void saveCalendarRoute(selectedEvent.id, tourLink).then((result) => {
+      if (result.error) setRouteSaveError(result.error);
+    });
+  }, [selectedEvent, tourLink, parkingLoading]);
 
   const startDragging = (event: DragEvent<HTMLDivElement>, index: number) => {
     event.dataTransfer.effectAllowed = "move";
@@ -452,9 +485,6 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
                 <h2>Parking stops</h2>
                 <p className="sub-copy">Drag to reorder your route</p>
               </div>
-              <span className="ai-badge">
-                <Sparkles size={14} /> {origin ? "From your location" : "Locating you…"}
-              </span>
             </div>
             <div className="sort-bar">
               <span>Rank by</span>
@@ -520,6 +550,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
                     {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied!" : "Copy link"}
                   </button>
                 </div>
+                {routeSaveError && <p className="empty-note">{routeSaveError}</p>}
               </>
             )}
           </div>
@@ -528,9 +559,6 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             <div className="map-card">
               <div className="map-toolbar">
                 <div className="map-heading">
-                  <span className="map-heading-icon">
-                    <MapPin size={16} />
-                  </span>
                   <div>
                     <strong>{destination?.name ?? (selectedEvent ? eventTitle(selectedEvent) : "Route preview")}</strong>
                     <span>{destination?.address ?? selectedEvent?.location ?? "Pick an event with a location"}</span>
@@ -559,9 +587,6 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
 
             <div className="arrival-card">
               <div className="arrival-title">
-                <span className="destination-icon">
-                  <MapPin size={16} />
-                </span>
                 <div>
                   <span>YOUR DESTINATION</span>
                   <strong>{destination?.name ?? selectedEvent?.location ?? "—"}</strong>
@@ -587,7 +612,6 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
                 </div>
               </div>
               <div className="arrival-note">
-                <Sparkles size={14} />
                 <span>
                   {selectedSpot && selectedEvent ? (
                     <>

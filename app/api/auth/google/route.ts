@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     client_id: clientId,
     redirect_uri: callbackUrl,
     response_type: "code",
-    scope: "openid email profile https://www.googleapis.com/auth/calendar.events.readonly",
+    scope: "openid email profile https://www.googleapis.com/auth/calendar.events",
     access_type: "offline",
     prompt: "consent",
     state,
@@ -33,5 +33,6 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(authorizationUrl);
   response.cookies.set(googleAuthCookies.state, state, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 600 });
+  response.cookies.set(googleAuthCookies.demo, "", { path: "/", maxAge: 0 });
   return response;
 }

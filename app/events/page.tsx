@@ -20,19 +20,39 @@ export default function Events() {
   const [signedIn, setSignedIn] = useState(true);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchCalendarEvents(controller.signal).then((result) => {
-      if (controller.signal.aborted) return;
+    let controller = new AbortController();
+    let firstLoad = true;
+    const refresh = () => {
+      controller.abort();
+      controller = new AbortController();
+      const requestController = controller;
+      fetchCalendarEvents(requestController.signal).then((result) => {
+      if (requestController.signal.aborted) return;
       // Parking needs somewhere to park near, so events without a location
       // are left out rather than shown as dead ends.
       const located = eventsWithLocation(result.events);
       setEvents(located);
+      setSelectedEvent((current) => current ? located.find((event) => event.id === current.id) ?? null : null);
       setSkipped(result.events.length - located.length);
       setError(result.error);
       setSignedIn(result.signedIn);
-      setLoading(false);
-    });
-    return () => controller.abort();
+      if (firstLoad) {
+        setLoading(false);
+        firstLoad = false;
+      }
+      });
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 30_000);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
   return (
