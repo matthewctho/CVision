@@ -42,18 +42,18 @@ export default function Events() {
   }, []);
 
   return (
-    <main className="min-h-dvh bg-[#f7f8fc] px-5 py-6 text-[#1c1b20] sm:px-8 dark:bg-[#121318] dark:text-[#e4e1e9]">
+    <main className="events-page min-h-dvh px-5 py-6 text-[#3b1f25] sm:px-8">
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-3xl flex-col">
         <header className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-semibold tracking-tight">CVision</h1>
+          <a href="/" className="text-3xl font-semibold tracking-tight">Parkwise</a>
           {signedIn ? (
             <form action="/api/auth/logout" method="post">
-              <button type="submit" className="rounded-full border border-[#dadce0] bg-white px-4 py-2.5 text-sm font-medium text-[#3c4043] shadow-sm transition hover:bg-[#f8f9fa] dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-white dark:hover:bg-[#3c4043]">
+              <button type="submit" className="rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
                 Log out
               </button>
             </form>
           ) : (
-            <a href="/api/auth/google" className="inline-flex items-center gap-3 rounded-full border border-[#dadce0] bg-white px-4 py-2.5 text-sm font-medium text-[#3c4043] shadow-sm transition hover:bg-[#f8f9fa] dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-white dark:hover:bg-[#3c4043]">
+            <a href="/api/auth/google" className="inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
               <GoogleMark />
               Sign in with Google
             </a>

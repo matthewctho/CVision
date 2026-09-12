@@ -19,6 +19,16 @@ async function refreshSession(session: GoogleSession): Promise<GoogleSession | n
 }
 
 export async function GET(request: NextRequest) {
+  if (request.cookies.get(googleAuthCookies.demo)?.value === "1") {
+    return NextResponse.json({
+      items: [
+        { id: "demo-1", summary: "Design sync at Figma", location: "Figma HQ · 760 Market St", start: { dateTime: "2026-09-12T10:30:00+10:00" }, end: { dateTime: "2026-09-12T12:00:00+10:00" }, description: "Review the latest product direction." },
+        { id: "demo-2", summary: "Lunch with Alex", location: "The Progress · 1525 Fillmore St", start: { dateTime: "2026-09-13T12:30:00+10:00" }, end: { dateTime: "2026-09-13T14:00:00+10:00" } },
+        { id: "demo-3", summary: "Dentist appointment", location: "Noe Valley Dental · 4015 24th St", start: { dateTime: "2026-09-19T15:00:00+10:00" }, end: { dateTime: "2026-09-19T16:00:00+10:00" } },
+      ],
+    });
+  }
+
   let session = await readSession(request.cookies.get(googleAuthCookies.session)?.value);
   if (!session) return NextResponse.json({ error: "Sign in with Google first" }, { status: 401 });
 

@@ -183,7 +183,7 @@ function Dashboard({ onSignOut }) {
   const copyLink = () => { navigator.clipboard?.writeText('https://parkwise.app/path/figma-hq-demo'); setCopied(true); setTimeout(() => setCopied(false), 1800); };
 
   return <div className="dashboard-shell">
-    <header className="topbar"><Logo /><nav><button className="nav-link active"><Home size={15} /> Overview</button><button className="nav-link"><CalendarDays size={15} /> Calendar</button><button className="nav-link"><Route size={15} /> Saved paths</button></nav><button className="location-button"><MapPin size={14} /> San Francisco <ChevronDown size={14} /></button><button className="profile-button"><span>JS</span><ChevronDown size={14} /></button><button className="mobile-menu"><Menu size={19} /></button></header>
+    <header className="topbar"><Logo /><nav><button className="nav-link active"><Home size={15} /> Overview</button><a className="nav-link" href="/events"><CalendarDays size={15} /> Calendar</a><button className="nav-link"><Route size={15} /> Saved paths</button></nav><button className="location-button"><MapPin size={14} /> San Francisco <ChevronDown size={14} /></button><button className="profile-button"><span>JS</span><ChevronDown size={14} /></button><button className="mobile-menu"><Menu size={19} /></button></header>
     <main className="dashboard-content">
       <section className="dash-hero"><div><div className="eyebrow"><span className="live-dot" /> synced with Google Calendar</div><h1>Your day, <em>parked.</em></h1><p>Here’s your smartest route for today, Jamie.</p></div><div className="hero-actions"><button className="icon-button"><Settings2 size={17} /></button><button className="primary-button" onClick={() => setShowEvents(!showEvents)}><CalendarDays size={16} /> {showEvents ? 'Hide events' : 'View calendar'} <ChevronDown size={14} /></button></div></section>
       {showEvents && <div className="event-popover">{EVENTS.map(event => <button key={event.id} onClick={() => { selectEvent(event); setShowEvents(false); }}><span className={`mini-date ${event.color}`}>{event.date === 'Today' ? '18' : event.id === 2 ? '19' : '20'}</span><span><strong>{event.title}</strong><small>{event.time}</small></span><ChevronRight size={14} /></button>)}</div>}
@@ -205,7 +205,13 @@ function MoreIcon() { return <span className="more-icon">•••</span>; }
 
 export default function App({ initialSignedIn = false }) {
   const [signedIn, setSignedIn] = useState(initialSignedIn);
+  const signOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    setSignedIn(false);
+    window.location.replace('/');
+  };
+
   return signedIn
-    ? <Dashboard onSignOut={() => { window.location.href = '/api/auth/logout'; }} />
+    ? <Dashboard onSignOut={signOut} />
     : <SignIn />;
 }
