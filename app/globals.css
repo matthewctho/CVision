@@ -417,3 +417,338 @@ a.primary-button {
     padding: 20px 0;
   }
 }
+
+.map-page {
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fbf5ef 0%, #efe0d3 52%, #f2e5da 100%);
+  color: #3b1f25;
+}
+
+.map-full-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.map-full-canvas .leaflet-container {
+  background: #e9ded0;
+  font-family: "DM Sans", sans-serif;
+}
+
+.map-back {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgb(255 255 255 / 78%);
+  border-radius: 999px;
+  background: rgb(255 250 245 / 78%);
+  padding: 11px 16px;
+  color: #7a3040;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 14px 30px rgb(89 35 47 / 16%);
+  backdrop-filter: blur(20px);
+  transition: transform .2s, background .2s;
+}
+
+.map-back:hover {
+  transform: translateY(-2px);
+  background: #fffaf5;
+}
+
+.map-banner {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  z-index: 1000;
+  max-width: min(520px, calc(100% - 48px));
+  transform: translateX(-50%);
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 999px;
+  background: rgb(122 48 64 / 92%);
+  padding: 10px 18px;
+  color: #fffaf5;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 12px 28px rgb(89 35 47 / 22%);
+  text-align: center;
+}
+
+.map-drawer {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  width: min(480px, calc(100% - 48px));
+  max-height: min(620px, calc(100dvh - 48px));
+  overflow-y: auto;
+  border: 1px solid rgb(255 255 255 / 80%);
+  border-radius: 26px;
+  background: rgb(255 250 245 / 78%);
+  box-shadow: 0 25px 70px rgb(59 31 37 / 25%), inset 0 1px 0 rgb(255 255 255 / 70%);
+  backdrop-filter: blur(28px) saturate(130%);
+  -webkit-backdrop-filter: blur(28px) saturate(130%);
+}
+
+.map-drawer-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid rgb(122 48 64 / 12%);
+  background: rgb(255 250 245 / 76%);
+  padding: 22px 22px 18px;
+  backdrop-filter: blur(24px);
+}
+
+.map-drawer-topline,
+.map-drawer-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.map-drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.map-drawer-actions .map-back {
+  position: static;
+  top: auto;
+  left: auto;
+  right: auto;
+  z-index: auto;
+  padding: 8px 10px;
+  box-shadow: none;
+}
+
+.map-drawer-title-row {
+  align-items: flex-start;
+}
+
+.map-minimize {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  border: 1px solid rgb(122 48 64 / 16%);
+  border-radius: 999px;
+  background: rgb(255 250 245 / 52%);
+  padding: 0;
+  color: #7a3040;
+  font-size: 16px;
+  font-weight: 800;
+  transition: transform .2s, background .2s;
+}
+
+.map-minimize:hover {
+  transform: translateY(-1px);
+  background: #f0d8d0;
+}
+
+.map-drawer.minimized {
+  width: min(480px, calc(100% - 48px));
+}
+
+.map-drawer.minimized .map-drawer-head {
+  padding-bottom: 16px;
+}
+
+.map-drawer.minimized h1 {
+  font-size: 16px;
+}
+
+.map-drawer.minimized .map-back {
+  padding: 8px 10px;
+}
+
+.map-overline {
+  margin: 0 0 8px;
+  color: #9b6f69;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.map-drawer h1 {
+  margin: 0;
+  color: #3b1f25;
+  font: 800 22px/1.15 Manrope;
+  letter-spacing: -.6px;
+}
+
+.map-address,
+.map-summary {
+  margin: 7px 0 0;
+  overflow: hidden;
+  color: #947b76;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-summary {
+  color: #a0837d;
+}
+
+.map-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  color: #a0837d;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.map-filters button {
+  border: 1px solid rgb(122 48 64 / 18%);
+  border-radius: 999px;
+  background: rgb(255 250 245 / 46%);
+  padding: 7px 10px;
+  color: #8f706b;
+  font-size: 10px;
+  font-weight: 800;
+  transition: transform .2s, background .2s, color .2s;
+}
+
+.map-filters button:hover,
+.map-filters button.active {
+  transform: translateY(-1px);
+  background: #f0d8d0;
+  color: #7a3040;
+}
+
+.map-tour {
+  display: block;
+  margin-top: 15px;
+  border-radius: 12px;
+  background: #7a3040;
+  padding: 12px;
+  color: #fffaf5;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: 0 10px 20px rgb(122 48 64 / 20%);
+  transition: transform .2s, background .2s;
+}
+
+.map-tour:hover {
+  transform: translateY(-2px);
+  background: #59232f;
+}
+
+.map-stop-list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 14px;
+  list-style: none;
+}
+
+.map-stop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgb(255 255 255 / 62%);
+  border-radius: 15px;
+  background: rgb(255 250 245 / 44%);
+  padding: 13px;
+  transition: transform .2s, border-color .2s, background .2s;
+}
+
+.map-drag {
+  flex: 0 0 14px;
+  color: #a78078;
+  cursor: grab;
+  font-size: 13px;
+  letter-spacing: -3px;
+  line-height: 1;
+}
+
+.map-drag.target {
+  color: #7a3040;
+}
+
+.map-stop:hover,
+.map-stop.selected {
+  transform: translateY(-2px);
+  border-color: #c98e86;
+  background: rgb(255 250 245 / 72%);
+}
+
+.map-stop-details {
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.map-stop-name,
+.map-stop-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-stop-name {
+  color: #3b1f25;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.map-stop-meta {
+  margin-top: 5px;
+  color: #927872;
+  font-size: 10px;
+}
+
+.map-directions {
+  flex-shrink: 0;
+  border: 1px solid rgb(122 48 64 / 18%);
+  border-radius: 999px;
+  background: rgb(240 216 208 / 72%);
+  padding: 8px 11px;
+  color: #7a3040;
+  font-size: 10px;
+  font-weight: 800;
+  transition: transform .2s, background .2s;
+}
+
+.map-directions:hover {
+  transform: translateY(-2px);
+  background: #f0d8d0;
+}
+
+@media (max-width: 700px) {
+  .map-back {
+    top: 14px;
+    left: 14px;
+  }
+
+  .map-drawer {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100% - 24px);
+    max-height: 48dvh;
+    border-radius: 22px;
+  }
+
+  .map-drawer.minimized {
+    width: calc(100% - 24px);
+  }
+
+  .map-banner {
+    top: 14px;
+    max-width: calc(100% - 150px);
+  }
+}

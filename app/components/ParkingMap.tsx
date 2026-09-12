@@ -63,6 +63,7 @@ export default function ParkingMap({
   const routeLineRef = useRef<Polyline | null>(null);
   const routeCarRef = useRef<Marker | null>(null);
   const routeAnimationRef = useRef<number | null>(null);
+  const routeRequestRef = useRef<AbortController | null>(null);
   const fittedKeyRef = useRef("");
   const initialDestinationRef = useRef(destination);
 
@@ -181,6 +182,7 @@ export default function ParkingMap({
       routeLineRef.current = null;
       routeCarRef.current = null;
       if (routeAnimationRef.current !== null) cancelAnimationFrame(routeAnimationRef.current);
+      routeRequestRef.current?.abort();
       instance?.stopLocate();
       instance?.remove();
     };
@@ -224,55 +226,72 @@ export default function ParkingMap({
     }
     if (points.length < 2) return;
 
-    routeLineRef.current = L.polyline(points, {
-      color: "#7a3040",
-      weight: 4,
-      opacity: 0.8,
-      dashArray: "8 7",
-      lineCap: "round",
-      lineJoin: "round",
-    }).addTo(map);
+    const controller = new AbortController();
+    routeRequestRef.current = controller;
+    fetch("/api/parking/route", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ points: points.map(([lat, lng]) => ({ lat, lng })) }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = (await response.json()) as { coordinates?: [number, number][]; error?: string };
+        if (!response.ok || !data.coordinates) throw new Error(data.error ?? "Could not load the road route.");
+        return data.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
+      })
+      .then((roadPoints) => {
+        if (controller.signal.aborted) return;
+        routeLineRef.current = L.polyline(roadPoints, {
+          color: "#7a3040",
+          weight: 4,
+          opacity: 0.8,
+          dashArray: "8 7",
+          lineCap: "round",
+          lineJoin: "round",
+        }).addTo(map);
 
-    const routeCar = L.marker(points[0], {
-      icon: L.divIcon({ className: "", html: ROUTE_CAR_HTML, iconSize: [0, 0] }),
-      interactive: false,
-      zIndexOffset: 1500,
-    }).addTo(map);
-    routeCarRef.current = routeCar;
+        const routeCar = L.marker(roadPoints[0], {
+          icon: L.divIcon({ className: "", html: ROUTE_CAR_HTML, iconSize: [0, 0] }),
+          interactive: false,
+          zIndexOffset: 1500,
+        }).addTo(map);
+        routeCarRef.current = routeCar;
 
-    const segmentLengths = points.slice(1).map((point, index) => {
-      const previous = points[index];
-      return Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-    });
-    const totalLength = segmentLengths.reduce((sum, length) => sum + length, 0);
-    const startedAt = performance.now();
-    const duration = Math.min(5200, Math.max(2200, totalLength * 90000));
+        const segmentLengths = roadPoints.slice(1).map((point, index) => {
+          const previous = roadPoints[index];
+          return Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+        });
+        const totalLength = segmentLengths.reduce((sum, length) => sum + length, 0);
+        const startedAt = performance.now();
+        const duration = Math.min(5200, Math.max(2200, totalLength * 90000));
 
-    const animate = (now: number) => {
-      const progress = Math.min((now - startedAt) / duration, 1);
-      const distance = progress * totalLength;
-      let travelled = 0;
-      let segmentIndex = 0;
-      while (segmentIndex < segmentLengths.length - 1 && travelled + segmentLengths[segmentIndex] < distance) {
-        travelled += segmentLengths[segmentIndex];
-        segmentIndex += 1;
-      }
-      const segmentProgress =
-        segmentLengths[segmentIndex] === 0
-          ? 1
-          : (distance - travelled) / segmentLengths[segmentIndex];
-      const start = points[segmentIndex];
-      const end = points[segmentIndex + 1];
-      routeCar.setLatLng([
-        start[0] + (end[0] - start[0]) * segmentProgress,
-        start[1] + (end[1] - start[1]) * segmentProgress,
-      ]);
-      if (progress < 1) routeAnimationRef.current = requestAnimationFrame(animate);
-      else routeAnimationRef.current = null;
-    };
+        const animate = (now: number) => {
+          const progress = Math.min((now - startedAt) / duration, 1);
+          const distance = progress * totalLength;
+          let travelled = 0;
+          let segmentIndex = 0;
+          while (segmentIndex < segmentLengths.length - 1 && travelled + segmentLengths[segmentIndex] < distance) {
+            travelled += segmentLengths[segmentIndex];
+            segmentIndex += 1;
+          }
+          const segmentProgress = segmentLengths[segmentIndex] === 0 ? 1 : (distance - travelled) / segmentLengths[segmentIndex];
+          const start = roadPoints[segmentIndex];
+          const end = roadPoints[segmentIndex + 1];
+          routeCar.setLatLng([
+            start[0] + (end[0] - start[0]) * segmentProgress,
+            start[1] + (end[1] - start[1]) * segmentProgress,
+          ]);
+          if (progress < 1) routeAnimationRef.current = requestAnimationFrame(animate);
+          else routeAnimationRef.current = null;
+        };
+        routeAnimationRef.current = requestAnimationFrame(animate);
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) console.error("Road route overlay failed:", error);
+      });
 
-    routeAnimationRef.current = requestAnimationFrame(animate);
     return () => {
+      controller.abort();
       if (routeAnimationRef.current !== null) cancelAnimationFrame(routeAnimationRef.current);
       routeAnimationRef.current = null;
       routeLineRef.current?.remove();

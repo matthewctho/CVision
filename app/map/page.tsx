@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
+import { Maximize2, Minus } from "lucide-react";
 import ParkingMap, { type MapSpot } from "../components/ParkingMap";
 import { useParkingRoute, type DestinationQuery } from "../components/useParkingRoute";
 import {
@@ -13,6 +14,8 @@ import {
   spotPopupHtml,
 } from "../components/parkingFormat";
 import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
+import { annotateRoute } from "@/lib/parking/route";
+import type { RoutedParkingSpot } from "@/lib/parking/route";
 
 // Used when the page is opened without an event, so it still shows something.
 const DEFAULT_DESTINATION: DestinationQuery = {
@@ -56,26 +59,44 @@ function MapView() {
   const { destination, routed, loading, error, origin, setOrigin } = useParkingRoute(query);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [locationError, setLocationError] = useState("");
+  const [sortMode, setSortMode] = useState<"route" | "nearest" | "cheapest" | "custom">("route");
+  const [customOrder, setCustomOrder] = useState<string[]>([]);
+  const [dragSource, setDragSource] = useState<number | null>(null);
+  const [dragTarget, setDragTarget] = useState<number | null>(null);
+  const [drawerMinimized, setDrawerMinimized] = useState(false);
 
   const title = destination?.name ?? query.name ?? ("address" in query ? query.address : "Destination");
-  const selected = routed.find((spot) => spot.id === selectedId) ?? null;
+  const spots = useMemo<RoutedParkingSpot<(typeof routed)[number]>[]>(() => {
+    const list = [...routed];
+    if (sortMode === "nearest") list.sort((a, b) => a.distanceMeters - b.distanceMeters);
+    if (sortMode === "cheapest") {
+      list.sort((a, b) => (a.estimatedPricePerHour ?? Infinity) - (b.estimatedPricePerHour ?? Infinity));
+    }
+    if (sortMode === "custom") {
+      const rank = new Map(customOrder.map((id, index) => [id, index]));
+      list.sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
+    }
+    return destination ? annotateRoute(origin ?? destination, destination, list) : list;
+  }, [routed, sortMode, customOrder, origin, destination]);
+
+  const selected = spots.find((spot) => spot.id === selectedId) ?? null;
 
   const mapSpots = useMemo<MapSpot[]>(
     () =>
-      routed.map((spot, index) => ({
+      spots.map((spot, index) => ({
         id: spot.id,
         lat: spot.lat,
         lng: spot.lng,
         popupHtml: spotPopupHtml(spot, index, title),
       })),
-    [routed, title],
+    [spots, title],
   );
 
   const tour = useMemo(() => {
-    if (routed.length < 2) return null;
-    const stops = routed.slice(0, MAX_STOPS);
+    if (spots.length < 2) return null;
+    const stops = spots.slice(0, MAX_STOPS);
     return { link: buildGoogleMapsLink(stops), stops: stops.length };
-  }, [routed]);
+  }, [spots]);
 
   const leaveBy =
     start && origin && selected
@@ -83,11 +104,22 @@ function MapView() {
       : null;
 
   const banner = error || locationError;
+  const reorder = (targetIndex: number) => {
+    if (dragSource === null || dragSource === targetIndex) return;
+    const next = spots.map((spot) => spot.id);
+    const [moved] = next.splice(dragSource, 1);
+    if (!moved) return;
+    next.splice(targetIndex, 0, moved);
+    setCustomOrder(next);
+    setSortMode("custom");
+    setDragSource(null);
+    setDragTarget(null);
+  };
 
   return (
-    <>
+    <main className="map-page">
       <ParkingMap
-        className="h-dvh"
+        className="map-full-canvas"
         destination={destination}
         spots={mapSpots}
         selectedSpotId={selectedId}
@@ -96,62 +128,75 @@ function MapView() {
         onLocationError={setLocationError}
       />
 
-      <Link
-        href="/"
-        className="absolute top-3 right-3 z-1000 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#7a3040] shadow"
-      >
-        ← Dashboard
-      </Link>
-
       {banner && (
-        <p className="absolute inset-x-0 top-0 z-1000 bg-red-600 p-2 text-center text-sm text-white">
+        <p className="map-banner">
           {banner}
         </p>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 z-1000 max-h-[45dvh] overflow-y-auto rounded-t-xl bg-white shadow-[0_-2px_10px_rgba(0,0,0,.2)]">
-        <div className="sticky top-0 border-b bg-white px-4 py-3">
-          <h1 className="text-sm font-semibold">Parking near {title}</h1>
-          {destination?.address && <p className="truncate text-xs text-gray-500">{destination.address}</p>}
-          <p className="text-xs text-gray-500">
-            {loading
-              ? "Finding nearby parking…"
-              : `${routed.length} spot${routed.length === 1 ? "" : "s"} in try-order`}
-            {start && ` · starts ${formatClock(start)}`}
-            {leaveBy && ` · leave by ${formatClock(leaveBy)}`}
-          </p>
-          {tour && (
-            <a
-              href={tour.link}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-2 block rounded-md bg-gray-900 px-3 py-2 text-center text-xs font-medium text-white"
-            >
-              Route through {tour.stops} spots in order
-            </a>
-          )}
+      <div className={`map-drawer ${drawerMinimized ? "minimized" : ""}`}>
+        <div className="map-drawer-head">
+          <div className="map-drawer-topline">
+            <p className="map-overline">CVISION ROUTE</p>
+            <div className="map-drawer-actions">
+              <Link href="/" className="map-back">← Dashboard</Link>
+              <button type="button" className="map-minimize" onClick={() => setDrawerMinimized((current) => !current)} aria-label={drawerMinimized ? "Expand route panel" : "Minimize route panel"} title={drawerMinimized ? "Expand route panel" : "Minimize route panel"}>
+                {drawerMinimized ? <Maximize2 size={14} strokeWidth={2.25} aria-hidden="true" /> : <Minus size={16} strokeWidth={2.25} aria-hidden="true" />}
+              </button>
+            </div>
+          </div>
+          <div className="map-drawer-title-row">
+            <h1>Parking near {title}</h1>
+          </div>
+          {!drawerMinimized && <>
+            {destination?.address && <p className="map-address">{destination.address}</p>}
+            <p className="map-summary">
+              {loading
+                ? "Finding nearby parking…"
+                : `${spots.length} spot${spots.length === 1 ? "" : "s"} in try-order`}
+              {start && ` · starts ${formatClock(start)}`}
+              {leaveBy && ` · leave by ${formatClock(leaveBy)}`}
+            </p>
+            <div className="map-filters" aria-label="Route filters">
+              <span>Rank by</span>
+              <button type="button" className={sortMode === "route" ? "active" : ""} onClick={() => setSortMode("route")}>Suggested</button>
+              <button type="button" className={sortMode === "nearest" ? "active" : ""} onClick={() => setSortMode("nearest")}>Nearest</button>
+              <button type="button" className={sortMode === "cheapest" ? "active" : ""} onClick={() => setSortMode("cheapest")}>Cheapest</button>
+            </div>
+            {tour && (
+              <a href={tour.link} target="_blank" rel="noreferrer" className="map-tour">
+                Route through {tour.stops} spots in order
+              </a>
+            )}
+          </>}
         </div>
 
-        <ul className="divide-y">
-          {routed.map((spot, index) => (
+        {!drawerMinimized && <ul className="map-stop-list">
+          {spots.map((spot, index) => (
             <li
               key={spot.id}
-              className={`flex items-center gap-3 px-4 py-3 ${selectedId === spot.id ? "bg-[#f9f1ec]" : ""}`}
+              className={`map-stop ${selectedId === spot.id ? "selected" : ""}`}
+              draggable
+              onDragStart={() => setDragSource(index)}
+              onDragOver={(event) => { event.preventDefault(); setDragTarget(index); }}
+              onDrop={(event) => { event.preventDefault(); reorder(index); }}
+              onDragEnd={() => { setDragSource(null); setDragTarget(null); }}
             >
+              <span className={`map-drag ${dragTarget === index ? "target" : ""}`} aria-hidden="true">⋮⋮</span>
               <button
                 type="button"
                 onClick={() => setSelectedId(spot.id)}
-                className="min-w-0 flex-1 text-left"
+                className="map-stop-details"
               >
-                <span className="block truncate text-sm font-medium">
+                <span className="map-stop-name">
                   {index + 1}. {spot.name}
                 </span>
-                <span className="block truncate text-xs text-gray-500">
+                <span className="map-stop-meta">
                   {formatDuration(spot.walkSeconds)} walk ·{" "}
                   {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
                   {formatDistance(spot.distanceMeters)}
                 </span>
-                <span className="block truncate text-xs text-gray-500">
+                <span className="map-stop-meta">
                   {priceOrAvailability(spot)}
                   {spot.rating !== null && ` · ★ ${spot.rating}`}
                   {spot.isOpenNow === false && " · closed"}
@@ -161,14 +206,14 @@ function MapView() {
                 href={buildGoogleMapsLink([{ lat: spot.lat, lng: spot.lng }])}
                 target="_blank"
                 rel="noreferrer"
-                className="shrink-0 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white"
+                className="map-directions"
               >
                 Directions
               </a>
             </li>
           ))}
-        </ul>
+        </ul>}
       </div>
-    </>
+    </main>
   );
 }
