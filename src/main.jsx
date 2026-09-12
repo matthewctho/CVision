@@ -1,12 +1,12 @@
+"use client";
+
 import React, { useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   ArrowDownUp, ArrowRight, CalendarDays, Car, Check, ChevronDown, ChevronLeft,
   ChevronRight, CircleHelp, Clock3, Copy, GripVertical, Home, Info, Layers3,
   MapPin, Menu, Navigation, ParkingCircle, Route, Search, Settings2, Sparkles,
   Star, Timer, X, Zap
 } from 'lucide-react';
-import './styles.css';
 
 const EVENTS = [
   { id: 1, title: 'Design sync at Figma', place: 'Figma HQ · 760 Market St', date: 'Today', time: '10:30 AM – 12:00 PM', color: 'purple', duration: '1 hr 30 min' },
@@ -50,7 +50,7 @@ function SignIn({ onSignIn }) {
           <div className="signin-icon"><CalendarDays size={22} /></div>
           <h2>Welcome to Parkwise</h2>
           <p>Sign in with Google</p>
-          <button className="google-button" onClick={onSignIn}><span className="google-g">G</span> Sign in with Google</button>
+          <a className="google-button" href="/api/auth/google"><span className="google-g">G</span> Sign in with Google</a>
         </div>
       </section>
       <footer className="auth-footer"><span>© 2025 Parkwise</span></footer>
@@ -202,9 +202,10 @@ function Dashboard({ onSignOut }) {
 }
 function MoreIcon() { return <span className="more-icon">•••</span>; }
 
-export default function App() {
-  const [signedIn, setSignedIn] = useState(false);
-  return signedIn ? <Dashboard onSignOut={() => setSignedIn(false)} /> : <SignIn onSignIn={() => setSignedIn(true)} />;
-}
 
-createRoot(document.getElementById('root')).render(<App />);
+export default function App({ initialSignedIn = false }) {
+  const [signedIn, setSignedIn] = useState(initialSignedIn);
+  return signedIn
+    ? <Dashboard onSignOut={() => { window.location.href = '/api/auth/logout'; }} />
+    : <SignIn />;
+}

@@ -29,6 +29,34 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Google sign-in setup
+
+The Parkwise sign-in button uses Google OAuth and requires local credentials.
+Copy `.env.example` to `.env.local`, then fill in the values from a Google
+Cloud OAuth 2.0 Web application:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Set these values in `.env.local`:
+
+```env
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+AUTH_SECRET=use-a-long-random-secret
+```
+
+In Google Cloud Console, add this authorized redirect URI:
+
+```text
+http://localhost:3000/api/auth/google/callback
+```
+
+Enable the Google Calendar API and configure the OAuth consent screen. Restart
+the Next.js development server after changing `.env.local`. If Next.js is
+running on another port, use that port in the redirect URI as well.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

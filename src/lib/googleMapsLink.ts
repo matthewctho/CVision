@@ -79,4 +79,3 @@ export function buildGoogleMapsLink(
 
     // URLSearchParams handles the encoding: "," becomes %2C and "|" becomes %7C.
     return `https://www.google.com/maps/dir/?${params.toString()}`;
-}
