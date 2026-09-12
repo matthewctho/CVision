@@ -44,7 +44,7 @@ export async function findNearbyParking(
     },
     body: JSON.stringify({
       includedTypes: ["parking"],
-      maxResultCount: 20,
+      maxResultCount: 5,
       locationRestriction: {
         circle: {
           center: { latitude: lat, longitude: lng },
