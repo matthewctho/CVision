@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useState } from 'react';
 import {
   ArrowDownUp, ArrowRight, CalendarDays, Car, Check, ChevronDown, ChevronLeft,
@@ -48,7 +50,7 @@ function SignIn({ onSignIn }) {
           <div className="signin-icon"><CalendarDays size={22} /></div>
           <h2>Welcome to Parkwise</h2>
           <p>Sign in with Google</p>
-          <button className="google-button" onClick={onSignIn}><span className="google-g">G</span> Sign in with Google</button>
+          <a className="google-button" href="/api/auth/google"><span className="google-g">G</span> Sign in with Google</a>
         </div>
       </section>
       <footer className="auth-footer"><span>© 2025 Parkwise</span></footer>
@@ -200,7 +202,10 @@ function Dashboard({ onSignOut }) {
 }
 function MoreIcon() { return <span className="more-icon">•••</span>; }
 
-export default function App() {
-  const [signedIn, setSignedIn] = useState(false);
-  return signedIn ? <Dashboard onSignOut={() => setSignedIn(false)} /> : <SignIn onSignIn={() => setSignedIn(true)} />;
+
+export default function App({ initialSignedIn = false }) {
+  const [signedIn, setSignedIn] = useState(initialSignedIn);
+  return signedIn
+    ? <Dashboard onSignOut={() => { window.location.href = '/api/auth/logout'; }} />
+    : <SignIn />;
 }
