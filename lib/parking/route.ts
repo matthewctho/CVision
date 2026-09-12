@@ -120,9 +120,8 @@ export function routeParkingSpots<T extends ParkingSpot>(
         .slice(0, MAX_CANDIDATES)
         .map((entry) => entry.spot);
 
-    const route: RoutedParkingSpot<T>[] = [];
+    const order: T[] = [];
     let position: LatLng = origin;
-    let cumulativeDriveSeconds = 0;
 
     while (remaining.length > 0) {
         let bestIndex = 0;
@@ -137,6 +136,28 @@ export function routeParkingSpots<T extends ParkingSpot>(
         }
 
         const [spot] = remaining.splice(bestIndex, 1);
+        order.push(spot);
+        position = spot;
+    }
+
+    return annotateRoute(origin, destination, order);
+}
+
+/**
+ * Attaches drive and walk figures to spots in exactly the order given — for
+ * when the driver has re-sorted or dragged the list into their own order and
+ * the leg times need to follow.
+ */
+export function annotateRoute<T extends ParkingSpot>(
+    origin: LatLng,
+    destination: LatLng,
+    spots: readonly T[],
+): RoutedParkingSpot<T>[] {
+    const route: RoutedParkingSpot<T>[] = [];
+    let position: LatLng = origin;
+    let cumulativeDriveSeconds = 0;
+
+    for (const spot of spots) {
         const driveSeconds = driveSecondsBetween(position, spot);
         cumulativeDriveSeconds += driveSeconds;
 

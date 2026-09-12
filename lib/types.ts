@@ -10,3 +10,16 @@ export type ParkingCandidate = {
   estimatedPricePerHour: number;
   priceIsEstimated: true;
 };
+
+/** Where the driver is ultimately going — the event's venue. */
+export type Destination = {
+  name: string;
+  lat: number;
+  lng: number;
+  address: string;
+};
+
+export type ParkingResponse = {
+  destination: Destination;
+  candidates: ParkingCandidate[];
+};
