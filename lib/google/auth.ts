@@ -13,6 +13,7 @@ export type GoogleSession = GoogleUser & {
 export const googleAuthCookies = {
   session: "google_session",
   state: "google_oauth_state",
+  demo: "parkwise_demo",
 };
 
 function authSecret() {

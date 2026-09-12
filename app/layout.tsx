@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Car Vision",
-  description: "Parking sight seeing bleh",
+  title: "Parkwise — Find your spot",
+  description: "A smarter way to plan parking around your calendar.",
   appleWebApp: {
-    title: "Car Vision",
+    title: "Parkwise",
     capable: true,
   },
 };

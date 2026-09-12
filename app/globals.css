@@ -1,4 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
 @import "tailwindcss";
+@import "../src/styles.css";
 
 :root {
   --background: #ffffff;
@@ -51,4 +53,144 @@ body {
   clip-path: polygon(50% 100%, 0 0, 100% 0);
   background: radial-gradient(circle at 50% 100%, rgb(26 115 232 / 0.65), rgb(26 115 232 / 0));
   transition: transform 0.2s linear, opacity 0.3s;
+}
+
+/* Parkwise theme: warm beige surfaces with maroon actions and accents. */
+:root {
+  --background: #f4ebe3;
+  --foreground: #3b1f25;
+  --parkwise-maroon: #7a3040;
+  --parkwise-deep-maroon: #59232f;
+  --parkwise-beige: #efe0d3;
+  --parkwise-cream: #fffaf5;
+}
+
+html,
+body {
+  background: linear-gradient(135deg, #fbf5ef 0%, var(--parkwise-beige) 52%, #f2e5da 100%);
+  color: var(--foreground);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+}
+
+.auth-shell,
+.dashboard-shell {
+  background: transparent;
+}
+
+.brand,
+.auth-copy h1,
+.dash-hero h1,
+.section-header h2,
+.signin-card h2 {
+  color: var(--foreground);
+}
+
+.brand-mark,
+.primary-button,
+.save-button {
+  background: var(--parkwise-maroon);
+}
+
+.primary-button:hover,
+.save-button:hover {
+  background: var(--parkwise-deep-maroon);
+}
+
+.auth-copy h1 em,
+.dash-hero h1 em,
+.eyebrow,
+.view-all,
+.share-row button,
+.arrival-note,
+.nav-link.active {
+  color: var(--parkwise-maroon);
+}
+
+.nav-link.active::after {
+  background: var(--parkwise-maroon);
+}
+
+.glass-card,
+.map-card,
+.event-card,
+.route-summary,
+.spot-row,
+.arrival-card,
+.location-button,
+.icon-button,
+.sort-chip,
+.google-button {
+  background: rgb(255 250 245 / 62%);
+  border-color: rgb(255 255 255 / 78%);
+  box-shadow: 0 18px 45px rgb(89 35 47 / 12%), inset 0 1px 0 rgb(255 255 255 / 55%);
+  backdrop-filter: blur(24px) saturate(125%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+}
+
+.beta-pill,
+.signin-icon,
+.summary-icon,
+.map-heading-icon,
+.ai-badge,
+.sort-chip.active {
+  color: var(--parkwise-maroon);
+  background: #f1d8d0;
+  border-color: #dfbdb4;
+}
+
+.map-heading-icon,
+.destination-icon,
+.summary-icon,
+.signin-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-heading-icon svg,
+.destination-icon svg,
+.summary-icon svg,
+.signin-icon svg,
+.brand-mark svg {
+  display: block;
+  margin: 0;
+}
+
+.route-line path {
+  stroke: var(--parkwise-maroon);
+}
+
+.route-car {
+  fill: var(--parkwise-maroon);
+}
+
+.map-pin {
+  border-color: var(--parkwise-maroon);
+}
+
+.map-pin span {
+  color: var(--parkwise-maroon);
+}
+
+.map-pin.pin-selected {
+  background: var(--parkwise-maroon);
+}
+
+.map-pin.pin-selected span {
+  color: var(--parkwise-cream);
+}
+
+.event-card:hover,
+.event-card.selected,
+.spot-row:hover,
+.spot-row.selected {
+  border-color: #c98e86;
+  box-shadow: 0 12px 24px rgb(122 48 64 / 16%);
+}
+
+.save-button.saved {
+  background: #58826b;
 }

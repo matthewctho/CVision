@@ -4,10 +4,18 @@ import { googleAuthCookies } from "@/lib/google/auth";
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   if (!clientId) {
-    return NextResponse.json(
-      { error: "Set GOOGLE_CLIENT_ID (or NEXT_PUBLIC_GOOGLE_CLIENT_ID) in .env.local, then restart the dev server" },
-      { status: 500 },
-    );
+    if (process.env.NODE_ENV !== "production") {
+      const response = NextResponse.redirect(new URL("/?demo=1", request.nextUrl.origin));
+      response.cookies.set(googleAuthCookies.demo, "1", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: false,
+        path: "/",
+        maxAge: 60 * 60 * 8,
+      });
+      return response;
+    }
+    return NextResponse.json({ error: "Google OAuth is not configured on this deployment" }, { status: 503 });
   }
 
   const state = crypto.randomUUID();

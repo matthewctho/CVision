@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Circle, Map as LeafletMap, Marker } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { ParkingCandidate } from "@/lib/types";
-import { buildGoogleMapsLink, buildParkingTourLink } from "@/src/lib/googleMapsLink";
+import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
+import { routeParkingSpots, type RoutedParkingSpot } from "@/lib/parking/route";
 
 type CompassEvent = DeviceOrientationEvent & { webkitCompassHeading?: number };
 
@@ -26,12 +27,18 @@ function formatDistance(meters: number): string {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(1)} km`;
 }
 
+function formatDuration(seconds: number): string {
+  const minutes = Math.round(seconds / 60);
+  return minutes < 1 ? "<1 min" : `${minutes} min`;
+}
+
 export default function MapPage() {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
   const [map, setMap] = useState<LeafletMap | null>(null);
   const [candidates, setCandidates] = useState<ParkingCandidate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null);
   const markersRef = useRef(new Map<string, Marker>());
 
   useEffect(() => {
@@ -91,6 +98,9 @@ export default function MapPage() {
             fillOpacity: 0.12,
           }).addTo(m);
         }
+        // First fix only: re-ordering the route under the driver mid-drive
+        // could point them back at a lot they have already passed.
+        setOrigin((current) => current ?? { lat: e.latlng.lat, lng: e.latlng.lng });
         // The view stays on the destination — that's what the parking is for.
         // GPS heading only exists while actually moving.
         if (Number.isFinite(e.heading)) {
@@ -158,28 +168,38 @@ export default function MapPage() {
     return () => controller.abort();
   }, []);
 
+  // Before the first GPS fix, score as though the driver were arriving at the
+  // destination — the walk term dominates anyway, so the list is still sane.
+  const routed = useMemo(
+    () => routeParkingSpots(origin ?? DESTINATION, DESTINATION, candidates),
+    [origin, candidates],
+  );
+
   useEffect(() => {
-    if (!map || candidates.length === 0) return;
+    if (!map || routed.length === 0) return;
     let cancelled = false;
     const markers = markersRef.current;
 
     import("leaflet").then((L) => {
       if (cancelled) return;
 
-      for (const spot of candidates) {
+      for (const [index, spot] of routed.entries()) {
         const marker = L.marker([spot.lat, spot.lng], {
           icon: L.divIcon({
             className: "",
             html:
               '<div style="width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:4px;' +
               "background:#1a73e8;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);" +
-              'color:#fff;font:700 13px/18px system-ui,sans-serif;text-align:center">P</div>',
+              'color:#fff;font:700 13px/18px system-ui,sans-serif;text-align:center">' +
+              `${index + 1}</div>`,
             iconSize: [0, 0],
           }),
         })
           .addTo(map)
           .bindPopup(
-            `<b>${escapeHtml(spot.name)}</b><br>${formatDistance(spot.distanceMeters)} away` +
+            `<b>${index + 1}. ${escapeHtml(spot.name)}</b>` +
+              `<br>${formatDuration(spot.walkSeconds)} walk to ${escapeHtml(DESTINATION.name)}` +
+              `<br>${formatDuration(spot.cumulativeDriveSeconds)} drive to get here` +
               `<br>~$${spot.estimatedPricePerHour.toFixed(2)}/hr (estimated)` +
               `<br><a href="${buildGoogleMapsLink([{ lat: spot.lat, lng: spot.lng }])}" ` +
               'target="_blank" rel="noreferrer">Directions</a>',
@@ -193,19 +213,16 @@ export default function MapPage() {
       for (const marker of markers.values()) marker.remove();
       markers.clear();
     };
-  }, [map, candidates]);
+  }, [map, routed]);
 
-  // One route that sweeps every spot, best-first, for driving around until
-  // something is actually free. Capped at what a Maps URL can carry.
   const tour = useMemo(() => {
-    if (candidates.length < 2) return null;
-    const link = buildParkingTourLink(DESTINATION, candidates);
-    const stops = new URL(link).searchParams.get("waypoints")?.split("|").length ?? 0;
-    return { link, stops: stops + 1 };
-  }, [candidates]);
+    if (routed.length < 2) return null;
+    const stops = routed.slice(0, MAX_STOPS);
+    return { link: buildGoogleMapsLink(stops), stops: stops.length };
+  }, [routed]);
 
   const focus = useCallback(
-    (spot: ParkingCandidate) => {
+    (spot: RoutedParkingSpot<ParkingCandidate>) => {
       map?.setView([spot.lat, spot.lng], 18);
       markersRef.current.get(spot.id)?.openPopup();
     },
@@ -228,7 +245,7 @@ export default function MapPage() {
           <p className="text-xs text-gray-500">
             {loading
               ? "Finding nearby parking…"
-              : `${candidates.length} spot${candidates.length === 1 ? "" : "s"} found`}
+              : `${routed.length} spot${routed.length === 1 ? "" : "s"} in try-order`}
           </p>
           {tour && (
             <a
@@ -237,23 +254,29 @@ export default function MapPage() {
               rel="noreferrer"
               className="mt-2 block rounded-md bg-gray-900 px-3 py-2 text-center text-xs font-medium text-white"
             >
-              Route through {tour.stops} spots, shortest drive
+              Route through {tour.stops} spots in order
             </a>
           )}
         </div>
 
         <ul className="divide-y">
-          {candidates.map((spot) => (
+          {routed.map((spot, index) => (
             <li key={spot.id} className="flex items-center gap-3 px-4 py-3">
               <button
                 type="button"
                 onClick={() => focus(spot)}
                 className="min-w-0 flex-1 text-left"
               >
-                <span className="block truncate text-sm font-medium">{spot.name}</span>
+                <span className="block truncate text-sm font-medium">
+                  {index + 1}. {spot.name}
+                </span>
                 <span className="block truncate text-xs text-gray-500">
-                  {formatDistance(spot.distanceMeters)} · ~$
-                  {spot.estimatedPricePerHour.toFixed(2)}/hr est.
+                  {formatDuration(spot.walkSeconds)} walk ·{" "}
+                  {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
+                  {formatDistance(spot.distanceMeters)}
+                </span>
+                <span className="block truncate text-xs text-gray-500">
+                  ~${spot.estimatedPricePerHour.toFixed(2)}/hr est.
                   {spot.rating !== null && ` · ★ ${spot.rating}`}
                   {spot.isOpenNow === false && " · closed"}
                 </span>
