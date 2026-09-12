@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createSession, googleAuthCookies, readSession, sessionCookie, type GoogleSession } from "@/lib/google/auth";
+
+type RefreshResponse = { access_token?: string; expires_in?: number };
+
+async function refreshSession(session: GoogleSession): Promise<GoogleSession | null> {
+  const clientId = process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!session.refreshToken || !clientId || !clientSecret) return null;
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: session.refreshToken, grant_type: "refresh_token" }),
+  });
+  const token = (await response.json()) as RefreshResponse;
+  if (!response.ok || !token.access_token || !token.expires_in) return null;
+  return { ...session, accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1000 };
+}
+
+export async function GET(request: NextRequest) {
+  if (request.cookies.get(googleAuthCookies.demo)?.value === "1") {
+    return NextResponse.json({
+      items: [
+        { id: "demo-1", summary: "Design sync at Figma", location: "Figma HQ · 760 Market St", start: { dateTime: "2026-09-12T10:30:00+10:00" }, end: { dateTime: "2026-09-12T12:00:00+10:00" }, description: "Review the latest product direction." },
+        { id: "demo-2", summary: "Lunch with Alex", location: "The Progress · 1525 Fillmore St", start: { dateTime: "2026-09-13T12:30:00+10:00" }, end: { dateTime: "2026-09-13T14:00:00+10:00" } },
+        { id: "demo-3", summary: "Dentist appointment", location: "Noe Valley Dental · 4015 24th St", start: { dateTime: "2026-09-19T15:00:00+10:00" }, end: { dateTime: "2026-09-19T16:00:00+10:00" } },
+      ],
+    });
+  }
+
+  let session = await readSession(request.cookies.get(googleAuthCookies.session)?.value);
+  if (!session) return NextResponse.json({ error: "Sign in with Google first" }, { status: 401 });
+
+  let didRefresh = false;
+  if (session.expiresAt < Date.now() + 60_000) {
+    session = await refreshSession(session);
+    didRefresh = true;
+  }
+  if (!session) return NextResponse.json({ error: "Google session expired; sign in again" }, { status: 401 });
+
+  const calendarUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+  calendarUrl.search = new URLSearchParams({ timeMin: new Date().toISOString(), maxResults: "5", singleEvents: "true", orderBy: "startTime" }).toString();
+  const calendarResponse = await fetch(calendarUrl, { headers: { Authorization: `Bearer ${session.accessToken}` } });
+  if (!calendarResponse.ok) {
+    console.error("Google Calendar request failed:", await calendarResponse.text());
+    return NextResponse.json({ error: "Could not load Calendar events" }, { status: 502 });
+  }
+
+  const response = NextResponse.json(await calendarResponse.json());
+  if (didRefresh) response.cookies.set(googleAuthCookies.session, await createSession(session), sessionCookie);
+  return response;
+}
