@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import {
@@ -20,13 +21,13 @@ import {
   Maximize2,
   Menu,
   Navigation,
-  ParkingCircle,
   Route,
   Sparkles,
   Star,
   Timer,
 } from "lucide-react";
 
+import brandIcon from "../icon.png";
 import ParkingMap, { type MapSpot } from "./ParkingMap";
 import { useParkingRoute, type DestinationQuery } from "./useParkingRoute";
 import {
@@ -73,7 +74,7 @@ function Logo() {
   return (
     <div className="brand">
       <span className="brand-mark">
-        <ParkingCircle size={18} />
+        <Image src={brandIcon} alt="" width={34} height={34} priority />
       </span>
       <span>CVision</span>
     </div>
@@ -627,7 +628,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
 
       <footer className="dash-footer">
         <span>
-          <ParkingCircle size={14} /> CVision
+          <Image src={brandIcon} alt="" width={14} height={14} /> CVision
         </span>
         <button type="button" onClick={onSignOut}>
           Sign out

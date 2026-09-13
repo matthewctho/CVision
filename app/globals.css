@@ -1192,3 +1192,22 @@ body,
 .save-button.saved {
   background: #188038;
 }
+
+/* The brand mark is the favicon artwork, which carries its own colours. */
+.brand-mark,
+.brand-mark:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dash-footer img {
+  display: block;
+  object-fit: contain;
+}
