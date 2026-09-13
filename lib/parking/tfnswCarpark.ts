@@ -75,9 +75,9 @@ export async function findNearbyTfnswCarparks(
   lng: number,
   radiusMeters: number = DEFAULT_RADIUS_METERS,
 ): Promise<ParkingCandidate[]> {
-  const apiKey = process.env.TFNSW_API_KEY;
+  const apiKey = process.env.TRANSPORT_NSW_KEY;
   if (!apiKey) {
-    console.warn("TFNSW_API_KEY is not set - skipping TfNSW Car Park data source");
+    console.warn("TRANSPORT_NSW_KEY is not set - skipping TfNSW Car Park data source");
     return [];
   }
 

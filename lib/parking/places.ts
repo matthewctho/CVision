@@ -88,12 +88,36 @@ export async function findNearbyParking(
     .sort((a, b) => a.distanceMeters - b.distanceMeters);
 }
 
+const MAX_PHOTO_WIDTH_PX = 400;
+
 type PlaceDetailsResponse = {
   reviews?: Array<{ text?: { text?: string } }>;
+  photos?: Array<{ name?: string }>;
 };
 
-/** Short review excerpts for a place - grounding text for AI safety scoring, not general use. */
-export async function getPlaceReviewSnippets(placeId: string): Promise<string[]> {
+export type PlacePhoto = { base64: string; mimeType: string };
+
+export type PlaceGroundingData = {
+  reviewSnippets: string[];
+  photo: PlacePhoto | null;
+};
+
+async function fetchPlacePhoto(photoName: string, apiKey: string): Promise<PlacePhoto | null> {
+  const res = await fetch(
+    `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${MAX_PHOTO_WIDTH_PX}`,
+    { headers: { "X-Goog-Api-Key": apiKey }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+  );
+  if (!res.ok) return null;
+
+  const mimeType = res.headers.get("content-type");
+  if (!mimeType) return null;
+
+  const bytes = await res.arrayBuffer();
+  return { base64: Buffer.from(bytes).toString("base64"), mimeType };
+}
+
+/** Review excerpts and a photo for a place - grounding data for AI safety scoring, not general use. */
+export async function getPlaceGroundingData(placeId: string): Promise<PlaceGroundingData> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     throw new Error("GOOGLE_MAPS_API_KEY is not set");
@@ -102,7 +126,7 @@ export async function getPlaceReviewSnippets(placeId: string): Promise<string[]>
   const res = await fetch(`${PLACE_DETAILS_URL}/${placeId}`, {
     headers: {
       "X-Goog-Api-Key": apiKey,
-      "X-Goog-FieldMask": "reviews",
+      "X-Goog-FieldMask": "reviews,photos",
     },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
@@ -114,9 +138,14 @@ export async function getPlaceReviewSnippets(placeId: string): Promise<string[]>
 
   const data: PlaceDetailsResponse = await res.json();
 
-  return (data.reviews ?? [])
+  const reviewSnippets = (data.reviews ?? [])
     .map((review) => review.text?.text?.trim())
     .filter((text): text is string => Boolean(text))
     .slice(0, MAX_REVIEW_SNIPPETS)
     .map((text) => (text.length > MAX_SNIPPET_LENGTH ? `${text.slice(0, MAX_SNIPPET_LENGTH)}…` : text));
+
+  const firstPhotoName = data.photos?.[0]?.name;
+  const photo = firstPhotoName ? await fetchPlacePhoto(firstPhotoName, apiKey) : null;
+
+  return { reviewSnippets, photo };
 }

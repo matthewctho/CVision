@@ -22,6 +22,7 @@ import {
   Navigation,
   ParkingCircle,
   Route,
+  Shield,
   Sparkles,
   Star,
   Timer,
@@ -185,6 +186,13 @@ function SpotRow({
   onDrop: (event: DragEvent<HTMLDivElement>, index: number) => void;
   onDragEnd: () => void;
 }) {
+  const { safety } = useSafetyScore({
+    id: spot.id,
+    name: spot.name,
+    address: spot.address,
+    source: spot.source,
+  });
+
   return (
     <div
       className={`spot-row ${selected ? "selected" : ""} ${dropTarget ? "drop-target" : ""}`}
@@ -218,6 +226,11 @@ function SpotRow({
           {spot.rating !== null && (
             <span>
               <Star size={12} /> {spot.rating}
+            </span>
+          )}
+          {safety?.score != null && (
+            <span>
+              <Shield size={12} /> {safety.score}/5
             </span>
           )}
         </div>

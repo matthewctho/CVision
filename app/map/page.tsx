@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, type DragEvent } from "react";
 import { Maximize2, Minus } from "lucide-react";
 import ParkingMap, { type MapSpot } from "../components/ParkingMap";
 import { useParkingRoute, type DestinationQuery } from "../components/useParkingRoute";
@@ -12,6 +12,7 @@ import {
   formatDuration,
   priceOrAvailability,
   spotPopupHtml,
+  type RoutedSpot,
 } from "../components/parkingFormat";
 import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
 import { annotateRoute } from "@/lib/parking/route";
@@ -81,11 +82,6 @@ function MapView() {
   }, [routed, sortMode, customOrder, origin, destination]);
 
   const selected = spots.find((spot) => spot.id === selectedId) ?? null;
-  const { safety: selectedSafety, loading: safetyLoading } = useSafetyScore(
-    selected
-      ? { id: selected.id, name: selected.name, address: selected.address, source: selected.source }
-      : null,
-  );
 
   const mapSpots = useMemo<MapSpot[]>(
     () =>
@@ -179,58 +175,93 @@ function MapView() {
 
         {!drawerMinimized && <ul className="map-stop-list">
           {spots.map((spot, index) => (
-            <li
+            <MapStopItem
               key={spot.id}
-              className={`map-stop ${selectedId === spot.id ? "selected" : ""}`}
-              draggable
+              spot={spot}
+              index={index}
+              selected={selectedId === spot.id}
+              dropTarget={dragTarget === index}
+              onSelect={() => setSelectedId(spot.id)}
               onDragStart={() => setDragSource(index)}
               onDragOver={(event) => { event.preventDefault(); setDragTarget(index); }}
               onDrop={(event) => { event.preventDefault(); reorder(index); }}
               onDragEnd={() => { setDragSource(null); setDragTarget(null); }}
-            >
-              <span className={`map-drag ${dragTarget === index ? "target" : ""}`} aria-hidden="true">⋮⋮</span>
-              <button
-                type="button"
-                onClick={() => setSelectedId(spot.id)}
-                className="map-stop-details"
-              >
-                <span className="map-stop-name">
-                  {index + 1}. {spot.name}
-                </span>
-                <span className="map-stop-meta">
-                  {formatDuration(spot.walkSeconds)} walk ·{" "}
-                  {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
-                  {formatDistance(spot.distanceMeters)}
-                </span>
-                <span className="map-stop-meta">
-                  {priceOrAvailability(spot)}
-                  {spot.rating !== null && ` · ★ ${spot.rating}`}
-                  {spot.isOpenNow === false && " · closed"}
-                </span>
-                {selectedId === spot.id && (
-                  <span className="map-stop-meta">
-                    {safetyLoading
-                      ? "Checking safety…"
-                      : selectedSafety?.score != null
-                        ? `Safety ${selectedSafety.score}/5 — ${selectedSafety.reasoning}`
-                        : selectedSafety
-                          ? "Safety: not enough information to assess."
-                          : null}
-                  </span>
-                )}
-              </button>
-              <a
-                href={buildGoogleMapsLink([{ lat: spot.lat, lng: spot.lng }])}
-                target="_blank"
-                rel="noreferrer"
-                className="map-directions"
-              >
-                Directions
-              </a>
-            </li>
+            />
           ))}
         </ul>}
       </div>
     </main>
+  );
+}
+
+function MapStopItem({
+  spot,
+  index,
+  selected,
+  dropTarget,
+  onSelect,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+}: {
+  spot: RoutedSpot;
+  index: number;
+  selected: boolean;
+  dropTarget: boolean;
+  onSelect: () => void;
+  onDragStart: () => void;
+  onDragOver: (event: DragEvent<HTMLLIElement>) => void;
+  onDrop: (event: DragEvent<HTMLLIElement>) => void;
+  onDragEnd: () => void;
+}) {
+  const { safety } = useSafetyScore({
+    id: spot.id,
+    name: spot.name,
+    address: spot.address,
+    source: spot.source,
+  });
+
+  return (
+    <li
+      className={`map-stop ${selected ? "selected" : ""}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
+      <span className={`map-drag ${dropTarget ? "target" : ""}`} aria-hidden="true">⋮⋮</span>
+      <button type="button" onClick={onSelect} className="map-stop-details">
+        <span className="map-stop-name">
+          {index + 1}. {spot.name}
+        </span>
+        <span className="map-stop-meta">
+          {formatDuration(spot.walkSeconds)} walk ·{" "}
+          {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
+          {formatDistance(spot.distanceMeters)}
+        </span>
+        <span className="map-stop-meta">
+          {priceOrAvailability(spot)}
+          {spot.rating !== null && ` · ★ ${spot.rating}`}
+          {spot.isOpenNow === false && " · closed"}
+          {safety?.score != null && ` · 🛡 ${safety.score}/5`}
+        </span>
+        {selected && safety?.score != null && (
+          <span className="map-stop-meta">{safety.reasoning}</span>
+        )}
+        {selected && safety && safety.score == null && (
+          <span className="map-stop-meta">Safety: not enough information to assess.</span>
+        )}
+      </button>
+      <a
+        href={buildGoogleMapsLink([{ lat: spot.lat, lng: spot.lng }])}
+        target="_blank"
+        rel="noreferrer"
+        className="map-directions"
+      >
+        Directions
+      </a>
+    </li>
   );
 }

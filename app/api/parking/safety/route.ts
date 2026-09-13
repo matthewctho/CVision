@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPlaceReviewSnippets } from "@/lib/parking/places";
+import { getPlaceGroundingData, type PlacePhoto } from "@/lib/parking/places";
 import { getSafetyScore } from "@/lib/parking/safety";
 
 const TFNSW_OFFICIAL_FACT = "This is an official Transport for NSW Park&Ride facility.";
@@ -28,16 +28,19 @@ export async function GET(request: NextRequest) {
   }
 
   let reviewSnippets: string[] | undefined;
+  let photo: PlacePhoto | undefined;
   if (source === "google_places") {
     try {
-      reviewSnippets = await getPlaceReviewSnippets(id);
+      const grounding = await getPlaceGroundingData(id);
+      reviewSnippets = grounding.reviewSnippets;
+      photo = grounding.photo ?? undefined;
     } catch (err) {
-      console.error("Fetching place reviews failed:", err);
+      console.error("Fetching place grounding data failed:", err);
     }
   }
 
   const officialFact = source === "tfnsw_carpark" ? TFNSW_OFFICIAL_FACT : undefined;
 
-  const safety = await getSafetyScore({ id, name, address, officialFact, reviewSnippets });
+  const safety = await getSafetyScore({ id, name, address, officialFact, reviewSnippets, photo });
   return NextResponse.json({ safety });
 }
