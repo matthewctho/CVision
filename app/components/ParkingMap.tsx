@@ -94,8 +94,10 @@ export default function ParkingMap({
       instance = m;
 
       // CARTO Voyager: a clean, coloured basemap (parks, water, roads) with
-      // far fewer POI icons than the default OpenStreetMap tiles. Key-free.
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      // far fewer POI icons than the default OpenStreetMap tiles. Needs a free
+      // key from https://carto.com/basemaps/apikey (set NEXT_PUBLIC_CARTO_API_KEY).
+      const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY ?? "";
+      L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${cartoKey}`, {
         attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
         subdomains: "abcd",
         maxZoom: 20,
