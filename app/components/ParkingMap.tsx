@@ -93,8 +93,12 @@ export default function ParkingMap({
       else m.setView([0, 0], 2);
       instance = m;
 
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors",
+      // CARTO Voyager: a clean, coloured basemap (parks, water, roads) with
+      // far fewer POI icons than the default OpenStreetMap tiles. Key-free.
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+        subdomains: "abcd",
+        maxZoom: 20,
       }).addTo(m);
 
       const icon = L.divIcon({
