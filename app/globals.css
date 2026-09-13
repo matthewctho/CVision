@@ -158,6 +158,26 @@ body {
   margin: 0;
 }
 
+.signin-icon img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.signin-card .signin-icon {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  width: 64px;
+  height: 64px;
+}
+
+.signin-card .signin-icon img {
+  width: 52px;
+  height: 52px;
+}
+
 .route-line path {
   stroke: var(--parkwise-maroon);
 }
@@ -373,6 +393,7 @@ a.primary-button {
     order: -1;
   }
 }
+
 
 .auth-shell {
   min-height: 100dvh;
@@ -908,15 +929,82 @@ body {
 }
 
 .left-column > .path-header {
-  margin-top: 56px;
-  padding-top: 18px;
-  border-top: 1px solid rgb(42 139 242 / 14%);
+  position: relative;
+  margin-top: 112px;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--google-blue, #1a73e8);
+}
+
+.left-column > .path-header .section-label {
+  color: var(--google-blue, #1a73e8);
+}
+
+.left-column > .path-header h2 {
+  margin-top: 9px;
 }
 
 .left-column > .path-header + .sort-bar,
 .left-column > .path-header + .sort-bar + .route-summary,
 .left-column > .path-header + .sort-bar + .route-summary + .spots-list {
   width: 100%;
+}
+
+.route-info-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.route-info-trigger {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--google-border);
+  border-radius: 8px;
+  background: var(--google-surface);
+  color: var(--google-muted);
+  box-shadow: var(--google-shadow);
+  transition: background .16s, border-color .16s, color .16s, transform .16s;
+}
+
+.route-info-trigger:hover,
+.route-info-trigger[aria-expanded="true"] {
+  border-color: #aecbfa;
+  background: var(--google-blue-soft);
+  color: var(--google-blue);
+}
+
+.route-info-trigger:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.route-info-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  display: grid;
+  min-width: 158px;
+  padding: 6px;
+  border: 1px solid var(--google-border);
+  border-radius: 10px;
+  background: var(--google-surface);
+  box-shadow: 0 4px 14px rgb(60 64 67 / 18%);
+}
+
+.route-info-options button {
+  padding: 9px 10px;
+  border-radius: 7px;
+  color: var(--google-text);
+  font-size: 12px;
+  text-align: left;
+}
+
+.route-info-options button:hover,
+.route-info-options button.active {
+  background: var(--google-blue-soft);
+  color: var(--google-blue);
 }
 
 /* Final cool-blue overrides for legacy component selectors. */
@@ -1191,4 +1279,77 @@ body,
 
 .save-button.saved {
   background: #188038;
+}
+
+
+/* The brand mark is the favicon artwork, which carries its own colours. */
+.brand-mark,
+.brand-mark:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Keep every interactive surface stable: hover can change colour, never position. */
+button:hover,
+button:active,
+a:hover,
+a:active,
+[role="button"]:hover,
+[role="button"]:active,
+.event-card:hover,
+.spot-row:hover,
+.map-stop:hover,
+.map-stop.selected,
+.map-back:hover,
+.map-minimize:hover,
+.map-filters button:hover,
+.map-tour:hover,
+.map-directions:hover,
+.route-info-trigger:hover,
+.route-info-trigger:active,
+.route-info-options button:hover,
+.route-info-options button:active {
+  transform: none !important;
+}
+
+.route-summary {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.save-button {
+  width: fit-content;
+  min-height: 34px;
+  margin: 12px 0 0;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.save-button:hover,
+.save-button:active {
+  box-shadow: none !important;
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dash-footer img {
+  display: block;
+  object-fit: contain;
+}
+
+/* Product wordmark styled like Google app headers (e.g. "Calendar" next to the logo). */
+.brand {
+  color: #5f6368;
+  font-weight: 500;
+  letter-spacing: -0.2px;
 }

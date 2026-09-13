@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import {
@@ -20,7 +21,6 @@ import {
   Maximize2,
   Menu,
   Navigation,
-  ParkingCircle,
   Route,
   Shield,
   Sparkles,
@@ -28,9 +28,11 @@ import {
   Timer,
 } from "lucide-react";
 
+import brandIcon from "../icon.png";
 import ParkingMap, { type MapSpot } from "./ParkingMap";
 import { useParkingRoute, type DestinationQuery } from "./useParkingRoute";
-import { useSafetyScore } from "./useSafetyScore";
+import { useSafetyScores } from "./useSafetyScore";
+import type { SafetyScore } from "@/lib/types";
 import {
   formatClock,
   formatDistance,
@@ -40,7 +42,6 @@ import {
   type RoutedSpot,
 } from "./parkingFormat";
 import {
-  eventDurationHours,
   eventTimeToDate,
   eventTitle,
   eventsWithLocation,
@@ -56,7 +57,8 @@ import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
 
 const EVENT_TONES = ["purple", "orange", "blue"] as const;
 type Tone = (typeof EVENT_TONES)[number];
-type SortMode = "route" | "nearest" | "cheapest" | "custom";
+type SortMode = "route" | "nearest" | "cheapest" | "safety" | "custom";
+type RouteInfoMode = "simplified" | "full";
 
 function toneFor(index: number): Tone {
   return EVENT_TONES[index % EVENT_TONES.length];
@@ -75,7 +77,7 @@ function Logo() {
   return (
     <div className="brand">
       <span className="brand-mark">
-        <ParkingCircle size={18} />
+        <Image src={brandIcon} alt="" width={54} height={54} priority />
       </span>
       <span>CVision</span>
     </div>
@@ -98,7 +100,7 @@ function SignIn() {
         </div>
         <div className="signin-card glass-card">
           <div className="signin-icon">
-            <CalendarDays size={22} />
+            <Image src={brandIcon} alt="CVision logo" width={60} height={60} priority />
           </div>
           <h2>Welcome to CVision</h2>
           <p>Sign in with Google to plan parking around your calendar.</p>
@@ -168,7 +170,9 @@ function SpotRow({
   index,
   selected,
   dropTarget,
-  costLabel,
+  summaryMode,
+  infoMode,
+  safety,
   onSelect,
   onDragStart,
   onDragOver,
@@ -179,20 +183,15 @@ function SpotRow({
   index: number;
   selected: boolean;
   dropTarget: boolean;
-  costLabel: string;
+  summaryMode: SortMode;
+  infoMode: RouteInfoMode;
+  safety: SafetyScore | undefined;
   onSelect: (id: string) => void;
   onDragStart: (event: DragEvent<HTMLDivElement>, index: number) => void;
   onDragOver: (event: DragEvent<HTMLDivElement>, index: number) => void;
   onDrop: (event: DragEvent<HTMLDivElement>, index: number) => void;
   onDragEnd: () => void;
 }) {
-  const { safety } = useSafetyScore({
-    id: spot.id,
-    name: spot.name,
-    address: spot.address,
-    source: spot.source,
-  });
-
   return (
     <div
       className={`spot-row ${selected ? "selected" : ""} ${dropTarget ? "drop-target" : ""}`}
@@ -211,34 +210,30 @@ function SpotRow({
       <div className="spot-main">
         <div className="spot-title">
           <strong>{spot.name}</strong>
-          {spot.isOpenNow === false ? <span className="status paid">CLOSED</span> : <span className="status paid">PAID</span>}
+          {(selected || infoMode === "full") &&
+            (spot.isOpenNow === false ? <span className="status paid">CLOSED</span> : <span className="status paid">PAID</span>)}
         </div>
-        <div className="spot-meta">
-          <span>
-            <Navigation size={12} /> {formatDistance(spot.distanceMeters)}
-          </span>
-          <span>
-            <Footprints size={12} /> {formatDuration(spot.walkSeconds)} walk
-          </span>
-          <span>
-            <Car size={12} /> {formatDuration(spot.cumulativeDriveSeconds)} drive
-          </span>
-          {spot.rating !== null && (
-            <span>
-              <Star size={12} /> {spot.rating}
-            </span>
-          )}
-          {safety?.score != null && (
-            <span>
-              <Shield size={12} /> {safety.score}/5
-            </span>
-          )}
-        </div>
+        {selected || infoMode === "full" ? (
+          <div className="spot-meta">
+            <span><Navigation size={12} /> {formatDistance(spot.distanceMeters)}</span>
+            <span><Footprints size={12} /> {formatDuration(spot.walkSeconds)} walk</span>
+            <span><Car size={12} /> {formatDuration(spot.cumulativeDriveSeconds)} drive</span>
+            {spot.rating !== null && <span><Star size={12} /> {spot.rating}</span>}
+            {safety?.score != null && <span><Shield size={12} /> {safety.score}/5</span>}
+          </div>
+        ) : summaryMode === "cheapest" ? (
+          <div className="spot-meta"><span><DollarSign size={12} /> {priceOrAvailability(spot)}</span></div>
+        ) : summaryMode === "nearest" ? (
+          <div className="spot-meta"><span><Navigation size={12} /> {formatDistance(spot.distanceMeters)}</span></div>
+        ) : summaryMode === "safety" ? (
+          <div className="spot-meta">
+            <span><Shield size={12} /> {safety?.score != null ? `${safety.score}/5` : "—"}</span>
+          </div>
+        ) : null}
       </div>
-      <div className="spot-cost">
-        <strong>{priceOrAvailability(spot)}</strong>
-        <span>{costLabel}</span>
-      </div>
+      {(selected || infoMode === "full") && (
+        <div className="spot-cost"><strong>{priceOrAvailability(spot)}</strong></div>
+      )}
       <ChevronRight size={16} className="row-arrow" />
     </div>
   );
@@ -251,6 +246,8 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const [sortMode, setSortMode] = useState<SortMode>("route");
+  const [routeInfoMode, setRouteInfoMode] = useState<RouteInfoMode>("simplified");
+  const [infoMenuOpen, setInfoMenuOpen] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
   const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null);
@@ -302,9 +299,20 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
   const selectEvent = (event: LocatedEvent) => {
     setSelectedEventId(event.id);
     setSortMode("route");
+    setRouteInfoMode("simplified");
+    setInfoMenuOpen(false);
     setCustomOrder([]);
     setSelectedSpotId(null);
   };
+
+  // Fetched once per spot regardless of sort mode, so "rank by safety" has
+  // scores to sort on before any row has been individually selected.
+  const safetyById = useSafetyScores(
+    useMemo(
+      () => routed.map((spot) => ({ id: spot.id, name: spot.name, address: spot.address, source: spot.source })),
+      [routed],
+    ),
+  );
 
   // Displayed order, with drive legs recomputed along it so the numbers still
   // mean something after a re-sort or a drag.
@@ -316,25 +324,19 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
       list.sort(
         (a, b) => (a.estimatedPricePerHour ?? Infinity) - (b.estimatedPricePerHour ?? Infinity),
       );
+    else if (sortMode === "safety")
+      // Safest first; spots with no score yet (or none available) sort last.
+      list.sort((a, b) => (safetyById[b.id]?.score ?? -1) - (safetyById[a.id]?.score ?? -1));
     else if (sortMode === "custom") {
       const rank = new Map(customOrder.map((id, index) => [id, index]));
       list.sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
     }
     if (!destination) return list;
     return annotateRoute(origin ?? destination, destination, list);
-  }, [routed, sortMode, customOrder, origin, destination]);
+  }, [routed, sortMode, customOrder, origin, destination, safetyById]);
 
   const selectedSpot = spots.find((spot) => spot.id === selectedSpotId) ?? spots[0] ?? null;
-  const { safety: selectedSpotSafety, loading: safetyLoading } = useSafetyScore(
-    selectedSpot
-      ? {
-          id: selectedSpot.id,
-          name: selectedSpot.name,
-          address: selectedSpot.address,
-          source: selectedSpot.source,
-        }
-      : null,
-  );
+  const selectedSpotSafety: SafetyScore | undefined = selectedSpot ? safetyById[selectedSpot.id] : undefined;
 
   const mapSpots = useMemo<MapSpot[]>(
     () =>
@@ -346,14 +348,6 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
       })),
     [spots, destination?.name],
   );
-
-  const durationHours = selectedEvent ? eventDurationHours(selectedEvent) : null;
-  const costLabel = (spot: RoutedSpot) => {
-    if (spot.estimatedPricePerHour == null) return "live availability";
-    return durationHours
-      ? `~$${(spot.estimatedPricePerHour * durationHours).toFixed(0)} for ${durationHours % 1 === 0 ? durationHours : durationHours.toFixed(1)} hr`
-      : "estimated";
-  };
 
   const eventStart = selectedEvent ? eventTimeToDate(selectedEvent.start) : null;
   const lastSpot = spots[spots.length - 1] ?? null;
@@ -502,7 +496,45 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             <div className="section-header path-header">
               <div className="left-column">
                 <span className="section-label">UP NEXT</span>
-                <h2>Parking Spots</h2>
+                <h2>Parking stops</h2>
+                <p className="sub-copy">Drag to reorder your route</p>
+              </div>
+              <div className="route-info-menu">
+                <button
+                  type="button"
+                  className="route-info-trigger"
+                  aria-label="Choose parking stop information display"
+                  aria-expanded={infoMenuOpen}
+                  onClick={() => setInfoMenuOpen((open) => !open)}
+                >
+                  <Menu size={16} />
+                </button>
+                {infoMenuOpen && (
+                  <div className="route-info-options" role="menu">
+                    <button
+                      type="button"
+                      className={routeInfoMode === "simplified" ? "active" : ""}
+                      onClick={() => {
+                        setRouteInfoMode("simplified");
+                        setInfoMenuOpen(false);
+                      }}
+                      role="menuitem"
+                    >
+                      Simplified info
+                    </button>
+                    <button
+                      type="button"
+                      className={routeInfoMode === "full" ? "active" : ""}
+                      onClick={() => {
+                        setRouteInfoMode("full");
+                        setInfoMenuOpen(false);
+                      }}
+                      role="menuitem"
+                    >
+                      Full info
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="sort-bar">
@@ -515,6 +547,9 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
               </SortButton>
               <SortButton active={sortMode === "cheapest"} onClick={() => setSortMode("cheapest")} icon={<DollarSign size={13} />}>
                 Cheapest
+              </SortButton>
+              <SortButton active={sortMode === "safety"} onClick={() => setSortMode("safety")} icon={<Shield size={13} />}>
+                Safety
               </SortButton>
             </div>
             <div className="route-summary">
@@ -543,7 +578,9 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
                     index={index}
                     selected={selectedSpot?.id === spot.id}
                     dropTarget={dragTargetIndex === index}
-                    costLabel={costLabel(spot)}
+                    summaryMode={sortMode}
+                    infoMode={routeInfoMode}
+                    safety={safetyById[spot.id]}
                     onSelect={setSelectedSpotId}
                     onDragStart={startDragging}
                     onDragOver={dragOver}
@@ -559,7 +596,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             {tourLink && (
               <>
                 <a className="save-button" href={tourLink} target="_blank" rel="noreferrer">
-                  <ExternalLink size={17} /> Open this route in Google Maps
+                  <ExternalLink size={17} /> Open in Google Maps
                 </a>
                 <div className="share-row">
                   <span>
@@ -647,13 +684,11 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
               {selectedSpot && (
                 <div className="arrival-note">
                   <span>
-                    {safetyLoading
-                      ? "Checking safety…"
-                      : selectedSpotSafety?.score != null
-                        ? `Safety ${selectedSpotSafety.score}/5 — ${selectedSpotSafety.reasoning}`
-                        : selectedSpotSafety
-                          ? "Safety: not enough information to assess this spot."
-                          : null}
+                    {selectedSpotSafety?.score != null
+                      ? `Safety ${selectedSpotSafety.score}/5 — ${selectedSpotSafety.reasoning}`
+                      : selectedSpotSafety
+                        ? "Safety: not enough information to assess this spot."
+                        : null}
                   </span>
                 </div>
               )}
@@ -664,7 +699,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
 
       <footer className="dash-footer">
         <span>
-          <ParkingCircle size={14} /> CVision
+          <Image src={brandIcon} alt="" width={14} height={14} /> CVision
         </span>
         <button type="button" onClick={onSignOut}>
           Sign out

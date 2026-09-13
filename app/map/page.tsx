@@ -17,7 +17,10 @@ import {
 import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
 import { annotateRoute } from "@/lib/parking/route";
 import type { RoutedParkingSpot } from "@/lib/parking/route";
-import { useSafetyScore } from "../components/useSafetyScore";
+import { useSafetyScores } from "../components/useSafetyScore";
+import type { SafetyScore } from "@/lib/types";
+
+type SortMode = "route" | "nearest" | "cheapest" | "safety" | "custom";
 
 // Used when the page is opened without an event, so it still shows something.
 const DEFAULT_DESTINATION: DestinationQuery = {
@@ -61,25 +64,39 @@ function MapView() {
   const { destination, routed, loading, error, origin, setOrigin } = useParkingRoute(query);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [locationError, setLocationError] = useState("");
-  const [sortMode, setSortMode] = useState<"route" | "nearest" | "cheapest" | "custom">("route");
+  const [sortMode, setSortMode] = useState<SortMode>("route");
   const [customOrder, setCustomOrder] = useState<string[]>([]);
   const [dragSource, setDragSource] = useState<number | null>(null);
   const [dragTarget, setDragTarget] = useState<number | null>(null);
   const [drawerMinimized, setDrawerMinimized] = useState(false);
 
   const title = destination?.name ?? query.name ?? ("address" in query ? query.address : "Destination");
+
+  // Fetched once per spot regardless of sort mode, so "rank by safety" has
+  // scores to sort on before any row has been individually selected.
+  const safetyById = useSafetyScores(
+    useMemo(
+      () => routed.map((spot) => ({ id: spot.id, name: spot.name, address: spot.address, source: spot.source })),
+      [routed],
+    ),
+  );
+
   const spots = useMemo<RoutedParkingSpot<(typeof routed)[number]>[]>(() => {
     const list = [...routed];
     if (sortMode === "nearest") list.sort((a, b) => a.distanceMeters - b.distanceMeters);
     if (sortMode === "cheapest") {
       list.sort((a, b) => (a.estimatedPricePerHour ?? Infinity) - (b.estimatedPricePerHour ?? Infinity));
     }
+    if (sortMode === "safety") {
+      // Safest first; spots with no score yet (or none available) sort last.
+      list.sort((a, b) => (safetyById[b.id]?.score ?? -1) - (safetyById[a.id]?.score ?? -1));
+    }
     if (sortMode === "custom") {
       const rank = new Map(customOrder.map((id, index) => [id, index]));
       list.sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
     }
     return destination ? annotateRoute(origin ?? destination, destination, list) : list;
-  }, [routed, sortMode, customOrder, origin, destination]);
+  }, [routed, sortMode, customOrder, origin, destination, safetyById]);
 
   const selected = spots.find((spot) => spot.id === selectedId) ?? null;
 
@@ -164,6 +181,7 @@ function MapView() {
               <button type="button" className={sortMode === "route" ? "active" : ""} onClick={() => setSortMode("route")}>Suggested</button>
               <button type="button" className={sortMode === "nearest" ? "active" : ""} onClick={() => setSortMode("nearest")}>Nearest</button>
               <button type="button" className={sortMode === "cheapest" ? "active" : ""} onClick={() => setSortMode("cheapest")}>Cheapest</button>
+              <button type="button" className={sortMode === "safety" ? "active" : ""} onClick={() => setSortMode("safety")}>Safety</button>
             </div>
             {tour && (
               <a href={tour.link} target="_blank" rel="noreferrer" className="map-tour">
@@ -186,6 +204,8 @@ function MapView() {
               onDragOver={(event) => { event.preventDefault(); setDragTarget(index); }}
               onDrop={(event) => { event.preventDefault(); reorder(index); }}
               onDragEnd={() => { setDragSource(null); setDragTarget(null); }}
+              sortMode={sortMode}
+              safety={safetyById[spot.id]}
             />
           ))}
         </ul>}
@@ -204,6 +224,8 @@ function MapStopItem({
   onDragOver,
   onDrop,
   onDragEnd,
+  sortMode,
+  safety,
 }: {
   spot: RoutedSpot;
   index: number;
@@ -214,14 +236,9 @@ function MapStopItem({
   onDragOver: (event: DragEvent<HTMLLIElement>) => void;
   onDrop: (event: DragEvent<HTMLLIElement>) => void;
   onDragEnd: () => void;
+  sortMode: SortMode;
+  safety: SafetyScore | undefined;
 }) {
-  const { safety } = useSafetyScore({
-    id: spot.id,
-    name: spot.name,
-    address: spot.address,
-    source: spot.source,
-  });
-
   return (
     <li
       className={`map-stop ${selected ? "selected" : ""}`}
@@ -236,17 +253,27 @@ function MapStopItem({
         <span className="map-stop-name">
           {index + 1}. {spot.name}
         </span>
-        <span className="map-stop-meta">
-          {formatDuration(spot.walkSeconds)} walk ·{" "}
-          {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
-          {formatDistance(spot.distanceMeters)}
-        </span>
-        <span className="map-stop-meta">
-          {priceOrAvailability(spot)}
-          {spot.rating !== null && ` · ★ ${spot.rating}`}
-          {spot.isOpenNow === false && " · closed"}
-          {safety?.score != null && ` · 🛡 ${safety.score}/5`}
-        </span>
+        {selected ? (
+          <>
+            <span className="map-stop-meta">
+              {formatDuration(spot.walkSeconds)} walk ·{" "}
+              {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
+              {formatDistance(spot.distanceMeters)}
+            </span>
+            <span className="map-stop-meta">
+              {priceOrAvailability(spot)}
+              {spot.rating !== null && ` · ★ ${spot.rating}`}
+              {spot.isOpenNow === false && " · closed"}
+              {safety?.score != null && ` · 🛡 ${safety.score}/5`}
+            </span>
+          </>
+        ) : sortMode === "cheapest" ? (
+          <span className="map-stop-meta">{priceOrAvailability(spot)}</span>
+        ) : sortMode === "nearest" ? (
+          <span className="map-stop-meta">{formatDistance(spot.distanceMeters)}</span>
+        ) : sortMode === "safety" ? (
+          <span className="map-stop-meta">🛡 {safety?.score != null ? `${safety.score}/5` : "—"}</span>
+        ) : null}
         {selected && safety?.score != null && (
           <span className="map-stop-meta">{safety.reasoning}</span>
         )}
