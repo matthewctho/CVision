@@ -191,16 +191,24 @@ function MapView() {
                 <span className="map-stop-name">
                   {index + 1}. {spot.name}
                 </span>
-                <span className="map-stop-meta">
-                  {formatDuration(spot.walkSeconds)} walk ·{" "}
-                  {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
-                  {formatDistance(spot.distanceMeters)}
-                </span>
-                <span className="map-stop-meta">
-                  {priceOrAvailability(spot)}
-                  {spot.rating !== null && ` · ★ ${spot.rating}`}
-                  {spot.isOpenNow === false && " · closed"}
-                </span>
+                {selectedId === spot.id ? (
+                  <>
+                    <span className="map-stop-meta">
+                      {formatDuration(spot.walkSeconds)} walk ·{" "}
+                      {formatDuration(spot.cumulativeDriveSeconds)} drive ·{" "}
+                      {formatDistance(spot.distanceMeters)}
+                    </span>
+                    <span className="map-stop-meta">
+                      {priceOrAvailability(spot)}
+                      {spot.rating !== null && ` · ★ ${spot.rating}`}
+                      {spot.isOpenNow === false && " · closed"}
+                    </span>
+                  </>
+                ) : sortMode === "cheapest" ? (
+                  <span className="map-stop-meta">{priceOrAvailability(spot)}</span>
+                ) : sortMode === "nearest" ? (
+                  <span className="map-stop-meta">{formatDistance(spot.distanceMeters)}</span>
+                ) : null}
               </button>
               <a
                 href={buildGoogleMapsLink([{ lat: spot.lat, lng: spot.lng }])}

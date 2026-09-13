@@ -55,6 +55,7 @@ import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
 const EVENT_TONES = ["purple", "orange", "blue"] as const;
 type Tone = (typeof EVENT_TONES)[number];
 type SortMode = "route" | "nearest" | "cheapest" | "custom";
+type RouteInfoMode = "simplified" | "full";
 
 function toneFor(index: number): Tone {
   return EVENT_TONES[index % EVENT_TONES.length];
@@ -167,6 +168,8 @@ function SpotRow({
   selected,
   dropTarget,
   costLabel,
+  summaryMode,
+  infoMode,
   onSelect,
   onDragStart,
   onDragOver,
@@ -178,6 +181,8 @@ function SpotRow({
   selected: boolean;
   dropTarget: boolean;
   costLabel: string;
+  summaryMode: SortMode;
+  infoMode: RouteInfoMode;
   onSelect: (id: string) => void;
   onDragStart: (event: DragEvent<HTMLDivElement>, index: number) => void;
   onDragOver: (event: DragEvent<HTMLDivElement>, index: number) => void;
@@ -202,29 +207,25 @@ function SpotRow({
       <div className="spot-main">
         <div className="spot-title">
           <strong>{spot.name}</strong>
-          {spot.isOpenNow === false ? <span className="status paid">CLOSED</span> : <span className="status paid">PAID</span>}
+          {(selected || infoMode === "full") &&
+            (spot.isOpenNow === false ? <span className="status paid">CLOSED</span> : <span className="status paid">PAID</span>)}
         </div>
-        <div className="spot-meta">
-          <span>
-            <Navigation size={12} /> {formatDistance(spot.distanceMeters)}
-          </span>
-          <span>
-            <Footprints size={12} /> {formatDuration(spot.walkSeconds)} walk
-          </span>
-          <span>
-            <Car size={12} /> {formatDuration(spot.cumulativeDriveSeconds)} drive
-          </span>
-          {spot.rating !== null && (
-            <span>
-              <Star size={12} /> {spot.rating}
-            </span>
-          )}
-        </div>
+        {selected || infoMode === "full" ? (
+          <div className="spot-meta">
+            <span><Navigation size={12} /> {formatDistance(spot.distanceMeters)}</span>
+            <span><Footprints size={12} /> {formatDuration(spot.walkSeconds)} walk</span>
+            <span><Car size={12} /> {formatDuration(spot.cumulativeDriveSeconds)} drive</span>
+            {spot.rating !== null && <span><Star size={12} /> {spot.rating}</span>}
+          </div>
+        ) : summaryMode === "cheapest" ? (
+          <div className="spot-meta"><span><DollarSign size={12} /> {priceOrAvailability(spot)}</span></div>
+        ) : summaryMode === "nearest" ? (
+          <div className="spot-meta"><span><Navigation size={12} /> {formatDistance(spot.distanceMeters)}</span></div>
+        ) : null}
       </div>
-      <div className="spot-cost">
-        <strong>{priceOrAvailability(spot)}</strong>
-        <span>{costLabel}</span>
-      </div>
+      {(selected || infoMode === "full") && (
+        <div className="spot-cost"><strong>{priceOrAvailability(spot)}</strong><span>{costLabel}</span></div>
+      )}
       <ChevronRight size={16} className="row-arrow" />
     </div>
   );
@@ -237,6 +238,8 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const [sortMode, setSortMode] = useState<SortMode>("route");
+  const [routeInfoMode, setRouteInfoMode] = useState<RouteInfoMode>("simplified");
+  const [infoMenuOpen, setInfoMenuOpen] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
   const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null);
@@ -288,6 +291,8 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
   const selectEvent = (event: LocatedEvent) => {
     setSelectedEventId(event.id);
     setSortMode("route");
+    setRouteInfoMode("simplified");
+    setInfoMenuOpen(false);
     setCustomOrder([]);
     setSelectedSpotId(null);
   };
@@ -478,7 +483,45 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             <div className="section-header path-header">
               <div className="left-column">
                 <span className="section-label">UP NEXT</span>
-                <h2>Parking Spots</h2>
+                <h2>Parking stops</h2>
+                <p className="sub-copy">Drag to reorder your route</p>
+              </div>
+              <div className="route-info-menu">
+                <button
+                  type="button"
+                  className="route-info-trigger"
+                  aria-label="Choose parking stop information display"
+                  aria-expanded={infoMenuOpen}
+                  onClick={() => setInfoMenuOpen((open) => !open)}
+                >
+                  <Menu size={16} />
+                </button>
+                {infoMenuOpen && (
+                  <div className="route-info-options" role="menu">
+                    <button
+                      type="button"
+                      className={routeInfoMode === "simplified" ? "active" : ""}
+                      onClick={() => {
+                        setRouteInfoMode("simplified");
+                        setInfoMenuOpen(false);
+                      }}
+                      role="menuitem"
+                    >
+                      Simplified info
+                    </button>
+                    <button
+                      type="button"
+                      className={routeInfoMode === "full" ? "active" : ""}
+                      onClick={() => {
+                        setRouteInfoMode("full");
+                        setInfoMenuOpen(false);
+                      }}
+                      role="menuitem"
+                    >
+                      Full info
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="sort-bar">
@@ -520,6 +563,8 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
                     selected={selectedSpot?.id === spot.id}
                     dropTarget={dragTargetIndex === index}
                     costLabel={costLabel(spot)}
+                    summaryMode={sortMode}
+                    infoMode={routeInfoMode}
                     onSelect={setSelectedSpotId}
                     onDragStart={startDragging}
                     onDragOver={dragOver}
@@ -535,7 +580,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             {tourLink && (
               <>
                 <a className="save-button" href={tourLink} target="_blank" rel="noreferrer">
-                  <ExternalLink size={17} /> Open this route in Google Maps
+                  <ExternalLink size={17} /> Open in Google Maps
                 </a>
                 <div className="share-row">
                   <span>
