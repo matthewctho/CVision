@@ -1211,3 +1211,10 @@ body,
   display: block;
   object-fit: contain;
 }
+
+/* Product wordmark styled like Google app headers (e.g. "Calendar" next to the logo). */
+.brand {
+  color: #5f6368;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
