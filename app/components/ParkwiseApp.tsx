@@ -29,6 +29,7 @@ import {
 
 import ParkingMap, { type MapSpot } from "./ParkingMap";
 import { useParkingRoute, type DestinationQuery } from "./useParkingRoute";
+import { useSafetyScore } from "./useSafetyScore";
 import {
   formatClock,
   formatDistance,
@@ -311,6 +312,16 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
   }, [routed, sortMode, customOrder, origin, destination]);
 
   const selectedSpot = spots.find((spot) => spot.id === selectedSpotId) ?? spots[0] ?? null;
+  const { safety: selectedSpotSafety, loading: safetyLoading } = useSafetyScore(
+    selectedSpot
+      ? {
+          id: selectedSpot.id,
+          name: selectedSpot.name,
+          address: selectedSpot.address,
+          source: selectedSpot.source,
+        }
+      : null,
+  );
 
   const mapSpots = useMemo<MapSpot[]>(
     () =>
@@ -624,6 +635,19 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
                   )}
                 </span>
               </div>
+              {selectedSpot && (
+                <div className="arrival-note">
+                  <span>
+                    {safetyLoading
+                      ? "Checking safety…"
+                      : selectedSpotSafety?.score != null
+                        ? `Safety ${selectedSpotSafety.score}/5 — ${selectedSpotSafety.reasoning}`
+                        : selectedSpotSafety
+                          ? "Safety: not enough information to assess this spot."
+                          : null}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </section>

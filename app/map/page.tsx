@@ -16,6 +16,7 @@ import {
 import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
 import { annotateRoute } from "@/lib/parking/route";
 import type { RoutedParkingSpot } from "@/lib/parking/route";
+import { useSafetyScore } from "../components/useSafetyScore";
 
 // Used when the page is opened without an event, so it still shows something.
 const DEFAULT_DESTINATION: DestinationQuery = {
@@ -80,6 +81,11 @@ function MapView() {
   }, [routed, sortMode, customOrder, origin, destination]);
 
   const selected = spots.find((spot) => spot.id === selectedId) ?? null;
+  const { safety: selectedSafety, loading: safetyLoading } = useSafetyScore(
+    selected
+      ? { id: selected.id, name: selected.name, address: selected.address, source: selected.source }
+      : null,
+  );
 
   const mapSpots = useMemo<MapSpot[]>(
     () =>
@@ -201,6 +207,17 @@ function MapView() {
                   {spot.rating !== null && ` · ★ ${spot.rating}`}
                   {spot.isOpenNow === false && " · closed"}
                 </span>
+                {selectedId === spot.id && (
+                  <span className="map-stop-meta">
+                    {safetyLoading
+                      ? "Checking safety…"
+                      : selectedSafety?.score != null
+                        ? `Safety ${selectedSafety.score}/5 — ${selectedSafety.reasoning}`
+                        : selectedSafety
+                          ? "Safety: not enough information to assess."
+                          : null}
+                  </span>
+                )}
               </button>
               <a
                 href={buildGoogleMapsLink([{ lat: spot.lat, lng: spot.lng }])}

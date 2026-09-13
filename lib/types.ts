@@ -32,3 +32,10 @@ export type ParkingResponse = {
   destination: Destination;
   candidates: ParkingCandidate[];
 };
+
+export type SafetyScore = {
+  /** 1 (avoid) to 5 (very safe), or null when there's nothing to ground a score in. */
+  score: number | null;
+  reasoning: string;
+  basedOn: "ai_estimate" | "insufficient_data";
+};
