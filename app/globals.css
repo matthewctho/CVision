@@ -158,6 +158,26 @@ body {
   margin: 0;
 }
 
+.signin-icon img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.signin-card .signin-icon {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  width: 64px;
+  height: 64px;
+}
+
+.signin-card .signin-icon img {
+  width: 52px;
+  height: 52px;
+}
+
 .route-line path {
   stroke: var(--parkwise-maroon);
 }
@@ -1261,23 +1281,43 @@ body,
   background: #188038;
 }
 
-/* Keep container hover states stable; only their color and border feedback changes. */
+
+/* The brand mark is the favicon artwork, which carries its own colours. */
+.brand-mark,
+.brand-mark:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Keep every interactive surface stable: hover can change colour, never position. */
+button:hover,
+button:active,
+a:hover,
+a:active,
+[role="button"]:hover,
+[role="button"]:active,
 .event-card:hover,
 .spot-row:hover,
 .map-stop:hover,
-.map-stop.selected {
+.map-stop.selected,
+.map-back:hover,
+.map-minimize:hover,
+.map-filters button:hover,
+.map-tour:hover,
+.map-directions:hover,
+.route-info-trigger:hover,
+.route-info-trigger:active,
+.route-info-options button:hover,
+.route-info-options button:active {
   transform: none !important;
 }
 
-/* Keep the route timing details lightweight and separate from the stop cards. */
 .route-summary {
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  padding-left: 2px;
-  padding-right: 2px;
 }
 
 .save-button {
@@ -1291,83 +1331,25 @@ body,
 }
 
 .save-button:hover,
-.save-button:active,
-.primary-button:hover,
-.primary-button:active,
-.brand-mark:hover,
-.map-back:hover,
-.map-minimize:hover,
-.sort-chip:hover,
-.sort-chip:active,
-.sort-chip.active,
-.map-filters button:hover,
-.map-filters button:active,
-.map-filters button.active,
-.map-tour:hover,
-.map-directions:hover,
-.route-info-trigger:hover,
-.route-info-trigger:active,
-.route-info-trigger[aria-expanded="true"] {
- transform: none !important;
+.save-button:active {
+  box-shadow: none !important;
 }
 
-.route-info-options button:hover,
-.route-info-options button:active,
-.route-info-options button.active {
- transform: none !important;
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.route-info-menu {
-  position: relative;
-  flex: 0 0 auto;
+.dash-footer img {
+  display: block;
+  object-fit: contain;
 }
 
-.route-info-trigger {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--google-border);
-  border-radius: 50%;
-  background: var(--google-surface);
-  color: var(--google-muted);
-  box-shadow: var(--google-shadow);
-  transition: background .18s, border-color .18s, color .18s, transform .18s;
-}
-
-.route-info-trigger:hover,
-.route-info-trigger[aria-expanded="true"] {
-  transform: translateY(-1px);
-  border-color: #aecbfa;
-  background: var(--google-blue-soft);
-  color: var(--google-blue);
-}
-
-.route-info-options {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 20;
-  display: grid;
-  min-width: 164px;
-  padding: 6px;
-  border: 1px solid var(--google-border);
-  border-radius: 12px;
-  background: var(--google-surface);
-  box-shadow: 0 4px 14px rgb(60 64 67 / 18%);
-}
-
-.route-info-options button {
-  border-radius: 8px;
-  padding: 9px 11px;
-  color: var(--google-text);
-  font-size: 12px;
-  text-align: left;
-  transition: background .18s, color .18s;
-}
-
-.route-info-options button:hover,
-.route-info-options button.active {
-  background: var(--google-blue-soft);
-  color: var(--google-blue);
+/* Product wordmark styled like Google app headers (e.g. "Calendar" next to the logo). */
+.brand {
+  color: #5f6368;
+  font-weight: 500;
+  letter-spacing: -0.2px;
 }
