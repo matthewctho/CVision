@@ -26,16 +26,16 @@ type Props = {
 
 const DESTINATION_ICON_HTML =
   '<div style="width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;' +
-  'background:#d93025;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)"></div>';
+  'background:#2A8BF2;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)"></div>';
 
 const ROUTE_CAR_HTML =
   '<div style="width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;' +
-  'background:#7a3040;border:3px solid #fff;box-shadow:0 2px 8px rgba(59,31,37,.35);' +
+  'background:#2A8BF2;border:3px solid #fff;box-shadow:0 2px 8px rgba(42,139,242,.16);' +
   'color:#fff;font:700 13px/18px system-ui,sans-serif;text-align:center">●</div>';
 
 function spotIconHtml(label: number, selected: boolean): string {
   const size = selected ? 28 : 22;
-  const background = selected ? "#7a3040" : "#1a73e8";
+  const background = selected ? "#1A63C6" : "#2A8BF2";
   return (
     `<div style="width:${size}px;height:${size}px;margin:-${size / 2}px 0 0 -${size / 2}px;border-radius:5px;` +
     `background:${background};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);` +
@@ -129,7 +129,7 @@ export default function ParkingMap({
           ring = L.circle(e.latlng, {
             radius: e.accuracy,
             interactive: false,
-            color: "#1a73e8",
+            color: "#2A8BF2",
             weight: 1,
             fillOpacity: 0.12,
           }).addTo(m);
@@ -248,7 +248,7 @@ export default function ParkingMap({
       .then((roadPoints) => {
         if (controller.signal.aborted) return;
         routeLineRef.current = L.polyline(roadPoints, {
-          color: "#7a3040",
+          color: "#2A8BF2",
           weight: 4,
           opacity: 0.8,
           dashArray: "8 7",

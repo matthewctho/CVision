@@ -56,11 +56,11 @@ export default function Events() {
   }, []);
 
   return (
-    <main className="events-page min-h-dvh px-5 py-6 text-[#3b1f25] sm:px-8">
+    <main className="events-page min-h-dvh px-5 py-6 text-[#3c4043] sm:px-8">
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-3xl flex-col">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" className="text-3xl font-semibold tracking-tight">CVision</Link>
-          <Link href="/" className="inline-flex items-center rounded-full border border-white/70 bg-white/55 px-4 py-2.5 text-sm font-medium text-[#7a3040] shadow-sm transition hover:bg-white/80">
+          <Link href="/" className="inline-flex items-center rounded-full border border-[#dadce0] bg-white px-4 py-2.5 text-sm font-medium text-[#1a73e8] shadow-sm transition hover:bg-[#f8fafd]">
             Back to homepage
           </Link>
         </header>
@@ -89,7 +89,7 @@ export default function Events() {
               {!signedIn && (
                 <a
                   href="/api/auth/google"
-                  className="mt-3 inline-block rounded-full bg-[#7a3040] px-4 py-2 text-xs font-semibold text-white"
+                  className="mt-3 inline-block rounded-full bg-[#1a73e8] px-4 py-2 text-xs font-semibold text-white"
                 >
                   Sign in with Google
                 </a>
@@ -103,12 +103,12 @@ export default function Events() {
             <ul className="overflow-hidden rounded-2xl bg-white shadow-sm">
               {events.map((event) => (
                 <li key={event.id} className="flex items-center border-b border-[#e7e7eb] last:border-0">
-                  <button type="button" onClick={() => setSelectedEvent(event)} className="min-w-0 flex-1 px-5 py-4 text-left transition hover:bg-[#f9f1ec]">
+                  <button type="button" onClick={() => setSelectedEvent(event)} className="min-w-0 flex-1 px-5 py-4 text-left transition hover:bg-[#eaf3fb]">
                     <p className="font-medium">{eventTitle(event)}</p>
                     <p className="mt-1 text-sm text-[#5f6368]">{formatEventTime(event.start)}</p>
-                    <p className="mt-1 truncate text-sm text-[#7a3040]">{event.location}</p>
+                    <p className="mt-1 truncate text-sm text-[#2a8bf2]">{event.location}</p>
                   </button>
-                  <Link href={parkingHref(event)} className="mr-4 shrink-0 rounded-full bg-[#7a3040] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#59232f]">
+                  <Link href={parkingHref(event)} className="mr-4 shrink-0 rounded-full bg-[#1a73e8] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1769d1]">
                     Find parking
                   </Link>
                 </li>
@@ -138,7 +138,7 @@ export default function Events() {
               {selectedEvent.description && <div><dt className="font-medium">Description</dt><dd className="mt-1 whitespace-pre-wrap text-[#5f6368]">{selectedEvent.description}</dd></div>}
             </dl>
             <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Link href={parkingHref(selectedEvent)} className="rounded-full bg-[#7a3040] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#59232f]">
+              <Link href={parkingHref(selectedEvent)} className="rounded-full bg-[#1a73e8] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1769d1]">
                 Find parking on the map
               </Link>
               {selectedEvent.htmlLink && (
