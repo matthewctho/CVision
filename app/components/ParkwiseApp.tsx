@@ -11,12 +11,12 @@ import {
   CircleHelp,
   Clock3,
   Copy,
+  DollarSign,
   ExternalLink,
   Footprints,
   GripVertical,
   Home,
   Info,
-  MapPin,
   Maximize2,
   Menu,
   Navigation,
@@ -411,9 +411,6 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             </Link>
           )}
         </nav>
-        <span className="location-button" title={selectedEvent?.location}>
-          <MapPin size={14} /> {selectedEvent ? selectedEvent.location : "No destination"}
-        </span>
         <button type="button" className="profile-button" onClick={onSignOut} title="Sign out">
           <span>{initials(userName)}</span>
         </button>
@@ -479,10 +476,9 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
             </div>
 
             <div className="section-header path-header">
-              <div>
-                <span className="section-label">SMART ROUTE</span>
-                <h2>Parking stops</h2>
-                <p className="sub-copy">Drag to reorder your route</p>
+              <div className="left-column">
+                <span className="section-label">UP NEXT</span>
+                <h2>Parking Spots</h2>
               </div>
             </div>
             <div className="sort-bar">
@@ -493,7 +489,7 @@ function Dashboard({ onSignOut, userName }: { onSignOut: () => void; userName?: 
               <SortButton active={sortMode === "nearest"} onClick={() => setSortMode("nearest")} icon={<Navigation size={13} />}>
                 Nearest
               </SortButton>
-              <SortButton active={sortMode === "cheapest"} onClick={() => setSortMode("cheapest")} icon={<Star size={13} />}>
+              <SortButton active={sortMode === "cheapest"} onClick={() => setSortMode("cheapest")} icon={<DollarSign size={13} />}>
                 Cheapest
               </SortButton>
             </div>
