@@ -42,3 +42,13 @@ yarn-error.log*
 next-env.d.ts
 
 node_modules
+
+# build output from old Vite prototype
+/dist
+
+# keys – never commit
+*_ssh
+*_ssh.pub
+id_rsa*
+id_ed25519*
+*.key

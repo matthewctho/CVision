@@ -53,7 +53,7 @@ import {
   type LocatedEvent,
 } from "@/lib/calendar/events";
 import { annotateRoute } from "@/lib/parking/route";
-import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
+import { MAX_STOPS, buildGoogleMapsLink } from "@/lib/googleMapsLink";
 
 const EVENT_TONES = ["purple", "orange", "blue"] as const;
 type Tone = (typeof EVENT_TONES)[number];

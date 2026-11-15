@@ -1,64 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Parkwise (CVision)
 
-## Getting Started
+Find parking for the places you're already going. Parkwise reads the events in your Google Calendar, finds car parks near each one, scores them on price, distance and safety, and chains several stops into a single Google Maps driving route.
 
-First, run the development server:
+Built as a team project at the University of Sydney (2026, semester 2).
+
+## Features
+
+- **Google sign-in and Calendar sync.** OAuth 2.0 login pulls your upcoming events that have a location.
+- **Nearby parking search.** Combines Google Places results with live occupancy from the **Transport for NSW car park API**, including "almost full" warnings.
+- **AI safety score.** Gemini rates each car park from 1 to 5 using its place details and photos. It's prompted to score only from concrete evidence (lighting, cameras, staffing, fencing), never from the suburb's reputation, and returns validated structured JSON.
+- **Multi-stop routing.** Ranks candidate spots and builds a Google Maps directions link across several stops.
+- **Interactive map.** Leaflet with CARTO basemap tiles.
+
+## Tech stack
+
+Next.js 16 (App Router, Route Handlers) · React 19 · TypeScript · Tailwind CSS v4 · Leaflet · Google Gemini (`@google/genai`) · Zod · Google Maps Platform · TfNSW Open Data
+
+## Project structure
+
+```
+app/
+  api/auth/        Google OAuth login, callback, logout
+  api/calendar/    Calendar event endpoints
+  api/parking/     Parking search, routing, AI safety scoring
+  components/      UI: main app shell, map, hooks
+  events/ map/     Pages
+lib/
+  parking/         Places, TfNSW occupancy, geocoding, routing, safety (Gemini)
+  calendar/        Calendar helpers
+  google/          OAuth/session helpers
+```
+
+## Getting started
+
+Requires Node 20+ and [pnpm](https://pnpm.io).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local   # then fill in your own keys
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### API keys
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Source |
+| --- | --- |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud Console → OAuth 2.0 Web client (enable the Google Calendar API) |
+| `GOOGLE_MAPS_API_KEY` | Google Maps Platform (Places API (New), Geocoding) |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) |
+| `TRANSPORT_NSW_KEY` | [TfNSW Open Data Hub](https://opendata.transport.nsw.gov.au) |
+| `NEXT_PUBLIC_CARTO_API_KEY` | Optional: [CARTO basemaps](https://carto.com/basemaps) |
+| `AUTH_SECRET` | Any long random string (`openssl rand -base64 32`) |
 
-## Learn More
+Add this authorised redirect URI to your OAuth client (change the port if needed):
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Google sign-in setup
-
-The Parkwise sign-in button uses Google OAuth and requires local credentials.
-Copy `.env.example` to `.env.local`, then fill in the values from a Google
-Cloud OAuth 2.0 Web application:
-
-```powershell
-Copy-Item .env.example .env.local
 ```
-
-Set these values in `.env.local`:
-
-```env
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-client-secret
-AUTH_SECRET=use-a-long-random-secret
-```
-
-In Google Cloud Console, add this authorized redirect URI:
-
-```text
 http://localhost:3000/api/auth/google/callback
 ```
 
-Enable the Google Calendar API and configure the OAuth consent screen. Restart
-the Next.js development server after changing `.env.local`. If Next.js is
-running on another port, use that port in the redirect URI as well.
+## Notes
 
-## Deploy on Vercel
+- Google Places doesn't expose parking rates, so prices are a stable per-lot **estimate** derived from the place ID ([lib/parking/mockPrice.ts](lib/parking/mockPrice.ts)), not real pricing.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Team
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Matthew Ho · Elisei Kambalin · Sanjeev Ragothaman · Monterey101

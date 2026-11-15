@@ -14,7 +14,7 @@ import {
   spotPopupHtml,
   type RoutedSpot,
 } from "../components/parkingFormat";
-import { MAX_STOPS, buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
+import { MAX_STOPS, buildGoogleMapsLink } from "@/lib/googleMapsLink";
 import { annotateRoute } from "@/lib/parking/route";
 import type { RoutedParkingSpot } from "@/lib/parking/route";
 import { useSafetyScores } from "../components/useSafetyScore";

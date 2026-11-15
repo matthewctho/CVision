@@ -1,6 +1,6 @@
 import type { ParkingCandidate } from "@/lib/types";
 import type { RoutedParkingSpot } from "@/lib/parking/route";
-import { buildGoogleMapsLink } from "@/src/lib/googleMapsLink";
+import { buildGoogleMapsLink } from "@/lib/googleMapsLink";
 
 export type RoutedSpot = RoutedParkingSpot<ParkingCandidate>;
 
