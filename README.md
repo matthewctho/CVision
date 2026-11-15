@@ -48,7 +48,7 @@ Open http://localhost:3000.
 | Variable | Source |
 | --- | --- |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud Console → OAuth 2.0 Web client (enable the Google Calendar API) |
-| `GOOGLE_MAPS_API_KEY` | Google Maps Platform (Places API (New), Geocoding) |
+| `GOOGLE_MAPS_API_KEY` | Google Maps Platform: enable Places API (New) |
 | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) |
 | `TRANSPORT_NSW_KEY` | [TfNSW Open Data Hub](https://opendata.transport.nsw.gov.au) |
 | `NEXT_PUBLIC_CARTO_API_KEY` | Optional: [CARTO basemaps](https://carto.com/basemaps) |
@@ -66,4 +66,4 @@ http://localhost:3000/api/auth/google/callback
 
 ## Team
 
-Matthew Ho · Elisei Kambalin · Sanjeev Ragothaman · Monterey101
+Matthew Ho · Elisei Kambalin · Sanjeev Ragothaman · Kristian Kocic
