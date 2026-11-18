@@ -1,8 +1,8 @@
-# Parkwise (CVision)
+# CVision
 
-Find parking for the places you're already going. Parkwise reads the events in your Google Calendar, finds car parks near each one, scores them on price, distance and safety, and chains several stops into a single Google Maps driving route.
+Find parking for the places you're already going. CVision reads the events in your Google Calendar, finds car parks near each one, scores them on price, distance and safety, and chains several stops into a single Google Maps driving route.
 
-Built as a team project at the University of Sydney (2026, semester 2).
+🥈 **2nd place out of 30+ teams at the n8n University Hackathon.** Built by a team of four University of Sydney students.
 
 ## Features
 
