@@ -4,6 +4,9 @@ Find parking for the places you're already going. CVision reads the events in yo
 
 🥈 **2nd place out of 30+ teams at the n8n University Hackathon.** Built by a team of four University of Sydney students.
 
+## Demo
+https://youtu.be/Y8LPpfTpveY
+
 ## Features
 
 - **Google sign-in and Calendar sync.** OAuth 2.0 login pulls your upcoming events that have a location.
