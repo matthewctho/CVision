@@ -5,7 +5,7 @@ Find parking for the places you're already going. CVision reads the events in yo
 🥈 **2nd place out of 30+ teams at the n8n University Hackathon.** Built by a team of four University of Sydney students.
 
 ## Demo
-https://youtu.be/Y8LPpfTpveY
+Link: https://youtu.be/Y8LPpfTpveY
 <img width="1710" height="1107" alt="Screenshot 2026-11-19 at 5 20 05 AM" src="https://github.com/user-attachments/assets/4eb24d7f-782f-4201-85aa-48bfe4f6dea2" />
 <img width="1710" height="1107" alt="Screenshot 2026-11-19 at 5 19 27 AM" src="https://github.com/user-attachments/assets/d916f123-cd7c-40a2-99c1-f72ab5080556" />
 
